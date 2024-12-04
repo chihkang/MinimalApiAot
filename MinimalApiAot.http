@@ -1,9 +1,13 @@
-@MinimalApiAot_HostAddress = http://localhost:5088
 
+//@MinimalApiAot_HostAddress = http://localhost:8080
+//http://localhost:5088 locahost開發
+// aot image http://localhost:8080,
+// docker run -d -p 8080:8080 --name minimal-api chihkang/minimalapiaot:arm64
+
+#### get request Hello World!
 GET {{MinimalApiAot_HostAddress}}/
 Accept: application/json
 
+#### get request system time
 GET {{MinimalApiAot_HostAddress}}/time/
 Accept: application/json
-
-###
