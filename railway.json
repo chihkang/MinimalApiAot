@@ -1,0 +1,7 @@
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "buildCommand": "",
+    "image": "chihkang/minimalapiaot:amd64"
+  }
+}

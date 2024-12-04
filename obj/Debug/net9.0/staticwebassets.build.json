@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "FbcBOicNsKaK8lMJLAQp8ii6NV4zdilS0G5WyeFMEt8=",
+  "Source": "MinimalApiAot",
+  "BasePath": "_content/MinimalApiAot",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
