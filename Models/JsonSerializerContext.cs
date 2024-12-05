@@ -10,6 +10,10 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(OpenApiInfo))]  // 添加 OpenAPI 相關類型
 [JsonSerializable(typeof(OpenApiDocument))]
+[JsonSerializable(typeof(MongoServerInfo))]
+[JsonSerializable(typeof(MongoConnections))]
+[JsonSerializable(typeof(MongoConfiguration))]
+[JsonSerializable(typeof(IMongoRepository))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

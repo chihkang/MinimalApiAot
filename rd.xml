@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Directives>
+    <Application>
+        <Assembly Name="MongoDB.Driver">
+            <Type Name="MongoDB.Driver.MongoClient" Dynamic="Required All" />
+            <Type Name="MongoDB.Driver.MongoClientSettings" Dynamic="Required All" />
+        </Assembly>
+        <Assembly Name="MongoDB.Bson">
+            <Type Name="MongoDB.Bson.BsonDocument" Dynamic="Required All" />
+        </Assembly>
+    </Application>
+</Directives>

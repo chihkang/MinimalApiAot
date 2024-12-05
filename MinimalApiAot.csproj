@@ -5,8 +5,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishAot>true</PublishAot>
-    <InvariantGlobalization>true</InvariantGlobalization>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <OptimizationPreference>Size</OptimizationPreference>
+    <!-- 添加以下 AOT 相關設定 -->
+    <IlcFoldIdenticalMethodBodies>false</IlcFoldIdenticalMethodBodies>
+    <EventSourceSupport>false</EventSourceSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <IsAotCompatible>true</IsAotCompatible>
+    <UseSystemResourceKeys>false</UseSystemResourceKeys>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <EnableUnsafeUTF7Encoding>true</EnableUnsafeUTF7Encoding>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,8 +25,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.1.0" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="open &quot;raycast://confetti&quot;" />
-  </Target>
-
+  <ItemGroup>
+    <!-- MongoDB Driver AOT 設定 -->
+    <TrimmerRootAssembly Include="MongoDB.Driver" PreserveDependency="true" />
+    <TrimmerRootAssembly Include="MongoDB.Bson" PreserveDependency="true"/>
+    <TrimmerRootAssembly Include="DnsClient" PreserveDependency="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <RdXmlFile Include="rd.xml" />
+  </ItemGroup>
 </Project>

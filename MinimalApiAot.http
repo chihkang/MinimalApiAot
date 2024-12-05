@@ -11,3 +11,7 @@ Accept: application/json
 #### get request system time
 GET {{MinimalApiAot_HostAddress}}/time/
 Accept: application/json
+
+### get mongodb health
+GET {{MinimalApiAot_HostAddress}}/api/mongodb/health
+Accept: application/json
