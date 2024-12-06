@@ -27,7 +27,15 @@ public static class ServiceCollectionExtensions
 
             return new MongoClient(mongoSettings);
         });
-
+        
+        // 新增這個 IMongoDatabase 的註冊
+        services.AddSingleton<IMongoDatabase>(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
+            var client = sp.GetRequiredService<IMongoClient>();
+            return client.GetDatabase(settings.DatabaseName);
+        });
+        
         return services;
     }
 }

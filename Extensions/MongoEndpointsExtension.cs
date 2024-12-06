@@ -33,7 +33,7 @@ public static class MongoEndpointsExtension
         })
         .WithName("MongoHealth")
         .WithDescription("Tests MongoDB connection health")
-        .Produces<MongoHealthResponse>(StatusCodes.Status200OK)
+        .Produces<MongoHealthResponse>()
         .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         // 詳細診斷資訊
@@ -68,7 +68,7 @@ public static class MongoEndpointsExtension
         })
         .WithName("MongoDiagnostics")
         .WithDescription("Provides detailed MongoDB connection diagnostics")
-        .Produces<MongoDiagnosticsResponse>(StatusCodes.Status200OK)
+        .Produces<MongoDiagnosticsResponse>()
         .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 

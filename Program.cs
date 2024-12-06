@@ -1,5 +1,3 @@
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
 
 BsonSerializer.RegisterSerializer(typeof(decimal), new DecimalSerializer(BsonType.Decimal128));
 BsonSerializer.RegisterSerializer(typeof(decimal?), new NullableSerializer<decimal>(new DecimalSerializer(BsonType.Decimal128)));
@@ -17,6 +15,7 @@ if (mongoSettings == null || string.IsNullOrEmpty(mongoSettings.ConnectionString
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMongoDb(builder.Configuration);
+builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolver = AppJsonSerializerContext.Default;
@@ -46,6 +45,7 @@ app.MapGet("/time", () => DateTime.UtcNow.ToString(CultureInfo.CurrentCulture));
 
 // Register endpoints
 app.MapItemEndpoints();
+app.MapUserEndpoints();
 app.MapMongoHealthEndpoints();
 
 app.Run();

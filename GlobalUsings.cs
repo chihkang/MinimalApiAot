@@ -17,3 +17,5 @@ global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.OpenApi.Models;
 global using MongoDB.Bson.Serialization;
 global using MongoDB.Bson.Serialization.Serializers;
+global using MongoDB.Bson.Serialization.Attributes;
+global using MinimalApiAot.Services;

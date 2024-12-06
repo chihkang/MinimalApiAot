@@ -14,6 +14,13 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(MongoConnections))]
 [JsonSerializable(typeof(MongoConfiguration))]
 [JsonSerializable(typeof(IMongoRepository))]
+[JsonSerializable(typeof(User))]
+[JsonSerializable(typeof(List<User>))]
+[JsonSerializable(typeof(UserSettings))]
+[JsonSerializable(typeof(IUserService))]
+[JsonSerializable(typeof(UserService))]
+[JsonSerializable(typeof(ObjectId))]
+//[JsonSerializable(typeof(UserEndpoints))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

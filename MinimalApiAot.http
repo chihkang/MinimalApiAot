@@ -15,3 +15,11 @@ Accept: application/json
 ### get mongodb health
 GET {{MinimalApiAot_HostAddress}}/api/mongodb/health
 Accept: application/json
+
+### get users
+GET {{MinimalApiAot_HostAddress}}/api/users
+Accept: application/json
+
+### get users/{id}
+GET {{MinimalApiAot_HostAddress}}/api/67283eee447a55a757f87db8
+Accept: application/json

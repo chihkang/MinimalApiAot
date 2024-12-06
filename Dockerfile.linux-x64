@@ -1,0 +1,21 @@
+﻿# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /source
+
+# Install necessary tools
+RUN apt-get update && apt-get install -y clang build-essential zlib1g-dev
+
+# Copy project files
+COPY . .
+
+# Restore dependencies
+RUN dotnet restore
+
+# Publish with Native AOT enabled
+RUN dotnet publish -c Release -o /app -p:PublishAot=true
+
+# Stage 2: Runtime image
+FROM mcr.microsoft.com/dotnet/runtime-deps:9.0
+WORKDIR /app
+COPY --from=build /app .
+ENTRYPOINT ["./MinimalApiAot"]
