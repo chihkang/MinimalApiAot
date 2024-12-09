@@ -26,7 +26,7 @@ public static class UserEndpoints
         .Produces(404);
 
         // Create user
-        group.MapPost("/", async (User user, IUserService userService) =>
+        group.MapPost("/", async ([FromBody]User user, IUserService userService) =>
         {
             var createdUser = await userService.CreateUserAsync(user);
             return Results.Created($"/api/users/{createdUser.Id}", createdUser);
@@ -35,7 +35,7 @@ public static class UserEndpoints
         .Produces<User>(201);
 
         // Update user
-        group.MapPut("/{id}", async (string id, User user, IUserService userService) =>
+        group.MapPut("/{id}", async (string id, [FromBody]User user, IUserService userService) =>
         {
             user.Id = id;
             var result = await userService.UpdateUserAsync(id, user);

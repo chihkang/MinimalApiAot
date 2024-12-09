@@ -6,7 +6,6 @@ global using System.Threading.Tasks;
 global using Microsoft.AspNetCore.Builder;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Configuration;
-global using MinimalApiAot.Repositories;
 global using MinimalApiAot.Extensions;
 global using MinimalApiAot.Models;
 global using MinimalApiAot.Endpoints;

@@ -2,6 +2,6 @@
   "build": {
     "builder": "DOCKERFILE",
     "buildCommand": "",
-    "image": "chihkang/minimalapiaot:amd64"
+    "image": "chihkang/minimalapiaot:arm64"
   }
 }

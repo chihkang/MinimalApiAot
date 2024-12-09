@@ -1,12 +1,19 @@
-<?xml version="1.0" encoding="utf-8" ?>
 <Directives>
     <Application>
+        <!-- MongoDB Driver -->
         <Assembly Name="MongoDB.Driver">
             <Type Name="MongoDB.Driver.MongoClient" Dynamic="Required All" />
-            <Type Name="MongoDB.Driver.MongoClientSettings" Dynamic="Required All" />
+            <Type Name="MongoDB.Driver.MongoCollection`1[[System.Object]]" Dynamic="Required All" />
+            <Type Name="MongoDB.Driver.IMongoCollection`1[[System.Object]]" Dynamic="Required All" />
+        </Assembly>
+        <Assembly Name="MongoDB.Driver.Core">
+            <Type Name="MongoDB.Driver.Core.Configuration.ClusterSettings" Dynamic="Required All" />
+            <Type Name="MongoDB.Driver.Core.Configuration.ConnectionSettings" Dynamic="Required All" />
+            <Type Name="MongoDB.Driver.Core.Configuration.ServerSettings" Dynamic="Required All" />
         </Assembly>
         <Assembly Name="MongoDB.Bson">
             <Type Name="MongoDB.Bson.BsonDocument" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.BsonValue" Dynamic="Required All" />
         </Assembly>
     </Application>
 </Directives>

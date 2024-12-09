@@ -1,0 +1,19 @@
+FROM mcr.microsoft.com/dotnet/core/sdk:9.0-alpine-amd64
+
+WORKDIR /app
+
+COPY *.csproj .
+
+RUN dotnet restore
+
+COPY . .
+
+RUN dotnet publish -c Release -o /app -p:PublishAot=true
+
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=0 /app .
+
+CMD ["dotnet", "myapp.dll"]

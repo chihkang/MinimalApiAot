@@ -1,9 +1,9 @@
-﻿# Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /source
 
 # Install necessary tools
-RUN apt-get update && apt-get install -y clang build-essential zlib1g-dev
+RUN apk add --no-cache clang zlib-dev
 
 # Copy project files
 COPY . .
@@ -15,7 +15,7 @@ RUN dotnet restore
 RUN dotnet publish -c Release -o /app -p:PublishAot=true
 
 # Stage 2: Runtime image
-FROM mcr.microsoft.com/dotnet/runtime-deps:9.0
+FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-alpine
 WORKDIR /app
 COPY --from=build /app .
 ENTRYPOINT ["./MinimalApiAot"]
