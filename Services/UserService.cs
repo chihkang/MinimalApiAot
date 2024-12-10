@@ -1,3 +1,5 @@
+using MinimalApiAot.Models.Entities;
+
 namespace MinimalApiAot.Services;
 
 public class UserService(ApplicationDbContext context) : IUserService

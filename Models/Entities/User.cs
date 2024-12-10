@@ -1,4 +1,4 @@
-namespace MinimalApiAot.Models;
+namespace MinimalApiAot.Models.Entities;
 
 public class User
 {

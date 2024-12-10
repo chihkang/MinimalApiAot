@@ -1,3 +1,5 @@
+using MinimalApiAot.Models.Entities;
+
 namespace MinimalApiAot.Endpoints;
 
 public static class UserEndpoints

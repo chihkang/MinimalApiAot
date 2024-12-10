@@ -1,3 +1,5 @@
+using MinimalApiAot.Models.Entities;
+
 namespace MinimalApiAot.Interfaces;
 
 public interface IUserService

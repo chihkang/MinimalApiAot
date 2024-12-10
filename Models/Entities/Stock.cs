@@ -1,20 +1,20 @@
-namespace MinimalApiAot.Models;
+namespace MinimalApiAot.Models.Entities;
 
 public class Stock
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [JsonPropertyName("_id")]
-    public string Id { get; set; }
+    public required string Id { get; set; }
     
     [JsonPropertyName("name")]
     [BsonElement("name")]
     [BsonRequired]
-    public string Name { get; set; }
+    public required string Name { get; set; }
     
     [BsonElement("alias")]
     [JsonPropertyName("alias")]
-    public string Alias { get; set; }
+    public required string Alias { get; set; }
     
     [BsonElement("price")]
     [BsonRepresentation(BsonType.Decimal128)]
@@ -23,7 +23,7 @@ public class Stock
     
     [BsonElement("currency")]
     [JsonPropertyName("currency")]
-    public string Currency { get; set; }
+    public required string Currency { get; set; }
     
     [BsonElement("lastUpdated")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
