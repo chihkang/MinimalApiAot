@@ -1,5 +1,3 @@
-using MinimalApiAot.Models.Entities;
-
 namespace MinimalApiAot.Endpoints;
 
 public static class UserEndpoints
@@ -29,7 +27,7 @@ public static class UserEndpoints
             .WithOpenApi();
 
         // 依 ID 獲取使用者
-        group.MapGet("/{id}", async (string id, IUserService userService, ILogger<IUserService> logger) =>
+        group.MapGet("/{id}", async (ObjectId id, IUserService userService, ILogger<IUserService> logger) =>
             {
                 try
                 {
@@ -64,14 +62,23 @@ public static class UserEndpoints
             .WithOpenApi();
 
         // 建立新使用者
-        group.MapPost("/", async (User user, IUserService userService, ILogger<IUserService> logger) =>
+        group.MapPost("/", async (CreateUserRequest request, IUserService userService,
+                IPortfolioService portfolioService, ILogger<IUserService> logger) =>
             {
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.Username))
+                    if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Username))
                     {
                         return Results.BadRequest("使用者名稱和電子郵件為必填欄位");
                     }
+
+                    var user = new User
+                    {
+                        Username = request.Username,
+                        Email = request.Email,
+                        CreatedAt = DateTime.UtcNow,
+                        Settings = request.Settings
+                    };
 
                     var createdUser = await userService.CreateUserAsync(user);
                     return Results.Created($"/api/users/{createdUser.Id}", createdUser);
@@ -86,7 +93,7 @@ public static class UserEndpoints
             .WithOpenApi();
 
         // 更新使用者
-        group.MapPut("/{id}", async (string id, User user, IUserService userService, ILogger<IUserService> logger) =>
+        group.MapPut("/{id}", async (ObjectId id, User user, IUserService userService, ILogger<IUserService> logger) =>
             {
                 try
                 {
@@ -103,7 +110,7 @@ public static class UserEndpoints
             .WithOpenApi();
 
         // 刪除使用者
-        group.MapDelete("/{id}", async (string id, IUserService userService, ILogger<IUserService> logger) =>
+        group.MapDelete("/{id}", async (ObjectId id, IUserService userService, ILogger<IUserService> logger) =>
             {
                 try
                 {

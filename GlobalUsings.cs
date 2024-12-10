@@ -1,4 +1,3 @@
-global using Microsoft.Extensions.Options;
 global using MinimalApiAot.Configurations;
 global using MinimalApiAot.Interfaces;
 global using MongoDB.Driver;
@@ -23,3 +22,4 @@ global using System.Text.Json;
 global using MinimalApiAot.Converter;
 global using MongoDB.Bson.Serialization.Attributes;
 global using MinimalApiAot.Models.DTO;
+global using MinimalApiAot.Models.Entities;

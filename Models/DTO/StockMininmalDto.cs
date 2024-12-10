@@ -3,7 +3,7 @@ namespace MinimalApiAot.Models.DTO;
 public record StockMinimalDto
 {
     [JsonPropertyName("_id")]
-    public string Id { get; init; }
+    public ObjectId Id { get; init; }
 
     [JsonPropertyName("name")]
     public string Name { get; init; }
@@ -11,7 +11,7 @@ public record StockMinimalDto
     [JsonPropertyName("alias")]
     public string Alias { get; init; }
 
-    public StockMinimalDto(string id, string name, string alias)
+    public StockMinimalDto(ObjectId id, string name, string alias)
     {
         Id = id;
         Name = name;

@@ -1,7 +1,35 @@
 namespace MinimalApiAot.Services;
 
-public class StockService(ApplicationDbContext context) : IStockService
+public class StockService(ApplicationDbContext context, ILogger<StockService> logger) : IStockService
 {
+    public async Task<Stock?> GetByIdAsync(ObjectId objectId)
+    {
+        try
+        {
+            return await context.Stocks.FindAsync(objectId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "查詢股票時發生錯誤。Stock ID: {StockId}", objectId);
+            throw;
+        }
+    }
+
+    public async Task<Stock?> GetByNameOrAliasAsync(string nameOrAlias)
+    {
+        try
+        {
+            return await context.Stocks
+                .FirstOrDefaultAsync(s => 
+                    s.Name.ToLower() == nameOrAlias.ToLower() || 
+                    s.Alias.ToLower() == nameOrAlias.ToLower());
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "根據名稱或代號查詢股票時發生錯誤。Name/Alias: {NameOrAlias}", nameOrAlias);
+            throw;
+        }
+    }
     public async Task<IEnumerable<StockMinimalDto>> GetAllStocksMinimalAsync()
     {
         return await context.Stocks

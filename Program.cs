@@ -32,6 +32,7 @@ builder.Services.AddSwaggerGen();
 // 註冊 UserService
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IPortfolioService, PortfolioService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolver = AppJsonSerializerContext.Default;
@@ -63,5 +64,6 @@ app.MapGet("/time", () => DateTime.UtcNow.ToString(CultureInfo.CurrentCulture));
 // Register endpoints
 app.MapUserEndpoints();
 app.MapStockEndpoints();
+app.MapPortfolioEndpoints();
 
 app.Run();

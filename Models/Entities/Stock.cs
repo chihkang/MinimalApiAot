@@ -5,7 +5,7 @@ public class Stock
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [JsonPropertyName("_id")]
-    public required string Id { get; set; }
+    public required ObjectId Id { get; set; }
     
     [JsonPropertyName("name")]
     [BsonElement("name")]
