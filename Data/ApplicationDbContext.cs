@@ -3,6 +3,8 @@ namespace MinimalApiAot.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users { get; init; }
+    public DbSet<Stock> Stocks { get; init; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +31,26 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             {
                 settings.WithOwner();
             });
+        });
+        modelBuilder.Entity<Stock>(entity =>
+        {
+            entity.ToCollection("stocks");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Name)
+                .IsRequired();
+                
+            entity.Property(e => e.Alias)
+                .IsRequired();
+                
+            entity.Property(e => e.Price)
+                .IsRequired();
+                
+            entity.Property(e => e.Currency)
+                .IsRequired();
+                
+            entity.Property(e => e.LastUpdated)
+                .IsRequired();
         });
     }
 }

@@ -22,3 +22,4 @@ global using MinimalApiAot.Data;
 global using System.Text.Json;
 global using MinimalApiAot.Converter;
 global using MongoDB.Bson.Serialization.Attributes;
+global using MinimalApiAot.Models.DTO;

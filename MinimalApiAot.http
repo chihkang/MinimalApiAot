@@ -34,8 +34,23 @@ Accept: application/json
 
 ### create user api/users
 POST {{MinimalApiAot_HostAddress}}/api/users
-Accept: application/json
-
+Content-Type: application/json
+{
+  "name": "John Doe",
+  "role": "admin"
+}
 ### update api/user/{id}
 PUT {{MinimalApiAot_HostAddress}}/api/users
+Content-Type: application/json
+{
+  "name": "John Doe",
+  "role": "admin"
+}
+
+### get stocks api/stocks/minimal
+GET {{MinimalApiAot_HostAddress}}/api/stocks/minimal
+Accept: application/json
+
+### put stocks api/stocks/minimal
+PUT {{MinimalApiAot_HostAddress}}/api/stocks/2534%3ATPE/price?newPrice=27.7
 Accept: application/json

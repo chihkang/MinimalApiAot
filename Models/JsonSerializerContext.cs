@@ -8,6 +8,9 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(List<User>))]
 [JsonSerializable(typeof(UserSettings))]
 [JsonSerializable(typeof(ObjectId))]
+[JsonSerializable(typeof(IEnumerable<StockMinimalDto>))]
+[JsonSerializable(typeof(UpdateStockPriceResponse))]
+[JsonSerializable(typeof(Stock))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

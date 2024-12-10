@@ -6,7 +6,6 @@
 
     <!-- Docker 相關設定 -->
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-
     <!-- 全球化設定 -->
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
