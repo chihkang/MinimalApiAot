@@ -1,6 +1,8 @@
+// 註冊 MongoDB 序列化器
 
 BsonSerializer.RegisterSerializer(typeof(decimal), new DecimalSerializer(BsonType.Decimal128));
-BsonSerializer.RegisterSerializer(typeof(decimal?), new NullableSerializer<decimal>(new DecimalSerializer(BsonType.Decimal128)));
+BsonSerializer.RegisterSerializer(typeof(decimal?),
+    new NullableSerializer<decimal>(new DecimalSerializer(BsonType.Decimal128)));
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,11 +13,24 @@ if (mongoSettings == null || string.IsNullOrEmpty(mongoSettings.ConnectionString
     throw new InvalidOperationException("MongoDB settings are not properly configured");
 }
 
+// 註冊 MongoDB EF Core
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    try
+    {
+        var mongoClient = new MongoClient(mongoSettings.ConnectionString);
+        options.UseMongoDB(mongoClient, mongoSettings.DatabaseName);
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException("Failed to initialize MongoDB connection", ex);
+    }
+});
 // 2. 註冊服務
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddMongoDb(builder.Configuration);
-builder.Services.AddSingleton<IUserService, UserService>();
+// 註冊 UserService
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolver = AppJsonSerializerContext.Default;
@@ -23,6 +38,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.WriteIndented = false;
     // 序列化時會忽略所有值為 null 的屬性
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter());
 });
 builder.Services.AddLogging(logging =>
 {
@@ -44,8 +60,6 @@ app.MapGet("/", () => "Hello World!");
 app.MapGet("/time", () => DateTime.UtcNow.ToString(CultureInfo.CurrentCulture));
 
 // Register endpoints
-app.MapItemEndpoints();
 app.MapUserEndpoints();
-app.MapMongoHealthEndpoints();
 
 app.Run();

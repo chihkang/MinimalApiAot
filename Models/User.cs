@@ -5,38 +5,42 @@ public class User
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [JsonPropertyName("_id")]
-    public string Id { get; set; } = null!;
+    [JsonConverter(typeof(ObjectIdJsonConverter))]
+    public ObjectId Id { get; set; }
 
     [BsonElement("username")]
-    [JsonPropertyName("username")]
-    public string Username { get; set; } = null!;
+    [BsonRequired]
+    [JsonPropertyName("username")] 
+    public string Username { get; set; } = string.Empty;
 
     [BsonElement("email")]
-    [JsonPropertyName("email")]
-    public string Email { get; set; } = null!;
+    [BsonRequired]
+    [JsonPropertyName("email")] 
+    public string Email { get; set; } = string.Empty;
 
     [BsonElement("portfolioId")]
     [BsonRepresentation(BsonType.ObjectId)]
     [JsonPropertyName("portfolioId")]
-    public string PortfolioId { get; set; } = null!;
+    [JsonConverter(typeof(ObjectIdJsonConverter))]
+    public ObjectId PortfolioId { get; set; }
 
     [BsonElement("createdAt")]
-    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    [BsonRepresentation(BsonType.DateTime)]
     [JsonPropertyName("createdAt")]
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [BsonElement("settings")]
-    [JsonPropertyName("settings")]
-    public UserSettings Settings { get; set; } = null!;
+    [JsonPropertyName("settings")] 
+    public UserSettings Settings { get; set; } = new();
 }
 
 public class UserSettings
 {
     [BsonElement("currency")]
-    [JsonPropertyName("currency")]
-    public string Currency { get; set; } = null!;
+    [JsonPropertyName("currency")] 
+    public string Currency { get; set; } = "TWD";
 
     [BsonElement("timeZone")]
-    [JsonPropertyName("timeZone")]
-    public string TimeZone { get; set; } = null!;
+    [JsonPropertyName("timeZone")] 
+    public string TimeZone { get; set; } = "Asia/Taipei";
 }

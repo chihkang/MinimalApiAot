@@ -16,10 +16,26 @@ Accept: application/json
 GET {{MinimalApiAot_HostAddress}}/api/mongodb/health
 Accept: application/json
 
-### get users
+### get api/users
 GET {{MinimalApiAot_HostAddress}}/api/users
 Accept: application/json
 
-### get users/{id}
-GET {{MinimalApiAot_HostAddress}}/api/67283eee447a55a757f87db8
+### get api/users/{id}
+GET {{MinimalApiAot_HostAddress}}/api/users/67283eee447a55a757f87db8
+Accept: application/json
+
+### get api/users/by-email/{email}
+GET {{MinimalApiAot_HostAddress}}/api/users/by-email/chihkang@me.com
+Accept: application/json
+
+### delete api/users/{id}
+DELETE {{MinimalApiAot_HostAddress}}/api/users/{id}
+Accept: application/json
+
+### create user api/users
+POST {{MinimalApiAot_HostAddress}}/api/users
+Accept: application/json
+
+### update api/user/{id}
+PUT {{MinimalApiAot_HostAddress}}/api/users
 Accept: application/json
