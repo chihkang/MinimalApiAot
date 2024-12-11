@@ -29,9 +29,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .IsRequired();
 
             entity.OwnsOne(e => e.Settings, settings => { settings.WithOwner(); });
-            // 添加與 Portfolio 的關聯
-            entity.HasOne<Portfolio>()
-                .WithOne()
+            // 修改關聯配置
+            entity.HasOne(u => u.Portfolio) // 指定導航屬性
+                .WithOne(p => p.User) // 指定反向導航屬性
                 .HasForeignKey<Portfolio>(p => p.UserId);
         });
         modelBuilder.Entity<Stock>(entity =>
@@ -58,20 +58,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.ToCollection("portfolio");
             entity.HasKey(e => e.Id);
-        
+
             entity.Property(e => e.UserId)
                 .IsRequired();
-            
+
             entity.Property(e => e.LastUpdated)
                 .IsRequired();
-            
-            entity.OwnsMany(e => e.Stocks);
 
-            // 添加與 User 的關聯
-            entity.HasOne<User>()
-                .WithOne()
-                .HasForeignKey<Portfolio>(p => p.UserId)
-                .IsRequired();
+            entity.OwnsMany(e => e.Stocks);
         });
     }
 }

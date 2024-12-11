@@ -10,12 +10,12 @@ public class User
 
     [BsonElement("username")]
     [BsonRequired]
-    [JsonPropertyName("username")] 
+    [JsonPropertyName("username")]
     public string Username { get; set; } = string.Empty;
 
     [BsonElement("email")]
     [BsonRequired]
-    [JsonPropertyName("email")] 
+    [JsonPropertyName("email")]
     public string Email { get; set; } = string.Empty;
 
     [BsonElement("portfolioId")]
@@ -30,17 +30,22 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [BsonElement("settings")]
-    [JsonPropertyName("settings")] 
-    public UserSettings Settings { get; set; } = new();
+    [JsonPropertyName("settings")]
+    public UserSettings? Settings { get; set; } = new();
+
+    // 添加導航屬性
+    [JsonIgnore]
+
+    public virtual Portfolio? Portfolio { get; set; }
 }
 
 public class UserSettings
 {
     [BsonElement("currency")]
-    [JsonPropertyName("currency")] 
+    [JsonPropertyName("currency")]
     public string Currency { get; set; } = "TWD";
 
     [BsonElement("timeZone")]
-    [JsonPropertyName("timeZone")] 
+    [JsonPropertyName("timeZone")]
     public string TimeZone { get; set; } = "Asia/Taipei";
 }

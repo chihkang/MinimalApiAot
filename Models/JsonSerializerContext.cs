@@ -23,6 +23,8 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(UpdateStockQuantityRequest))]
 [JsonSerializable(typeof(UpdateStockByIdRequest))]
 [JsonSerializable(typeof(UpdateStockByNameRequest))]
+[JsonSerializable(typeof(ApiResponse<Portfolio>))]
+[JsonSerializable(typeof(ApiResponse<string>))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

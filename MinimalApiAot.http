@@ -12,10 +12,6 @@ Accept: application/json
 GET {{MinimalApiAot_HostAddress}}/time/
 Accept: application/json
 
-### get mongodb health
-GET {{MinimalApiAot_HostAddress}}/api/mongodb/health
-Accept: application/json
-
 ### get api/users
 GET {{MinimalApiAot_HostAddress}}/api/users
 Accept: application/json

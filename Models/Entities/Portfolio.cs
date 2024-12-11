@@ -13,6 +13,10 @@ public class Portfolio
     [BsonElement("stocks")] public List<PortfolioStock> Stocks { get; set; } = new();
 
     [BsonElement("lastUpdated")] public DateTime LastUpdated { get; set; }
+    // 添加導航屬性
+    [JsonIgnore]
+
+    public virtual User? User { get; set; }
 }
 
 public class PortfolioStock

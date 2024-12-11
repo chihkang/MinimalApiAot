@@ -20,6 +20,10 @@ public static class PortfolioEndpoints
             .WithName("GetPortfolioByUserId")
             .WithDescription("Get a portfolio by user id");
 
+        group.MapGet("/user/name/{userName}", GetPortfolioByUserName)
+            .WithName("GetPortfolioByUserName")
+            .WithDescription("Get a portfolio by user name");
+
         // 更新投資組合中特定股票的數量
         group.MapPut("/{id}/stocks/{stockId}", UpdatePortfolioStockQuantity)
             .WithName("UpdatePortfolioStockQuantity")
@@ -29,15 +33,16 @@ public static class PortfolioEndpoints
             .WithName("RemoveStockFromPortfolio")
             .WithDescription("Remove a stock from portfolio");
 
-        // 根據股票 ID 更新投資組合股票
-        group.MapPut("/{id}/stocks/byId", UpdatePortfolioStockById)
-            .WithName("UpdatePortfolioStockById")
-            .WithDescription("根據股票 ID 更新投資組合中的股票數量");
-
         group.MapPut("/{id}/stocks", UpdatePortfolioStockByName)
             .WithName("UpdatePortfolioStockByName")
             .WithDescription("根據股票名稱或代號更新投資組合中的股票數量")
             .WithOpenApi();
+    }
+
+    private static async Task<IResult> GetPortfolioByUserName(IPortfolioService portfolioService, string userName)
+    {
+        var portfolio = await portfolioService.GetByUserNameAsync(userName);
+        return portfolio is null ? TypedResults.NotFound() : TypedResults.Ok(portfolio);
     }
 
     private static async Task<IResult> GetAllPortfolios(
@@ -120,49 +125,6 @@ public static class PortfolioEndpoints
         return TypedResults.Ok(portfolio);
     }
 
-    private static async Task<IResult> UpdatePortfolioStockById(
-        IPortfolioService portfolioService,
-        IStockService stockService,
-        ObjectId portfolioId,
-        ObjectId stockId,
-        UpdateStockByIdRequest request)
-    {
-        try
-        {
-            var portfolio = await portfolioService.GetByIdAsync(portfolioId);
-            if (portfolio is null)
-                return TypedResults.NotFound("找不到指定的投資組合");
-
-            var stock = await stockService.GetByIdAsync(stockId);
-            if (stock is null)
-                return TypedResults.NotFound("找不到指定的股票");
-
-            var stockEntry = portfolio.Stocks.FirstOrDefault(s => s.StockId == stockId);
-            if (stockEntry is null)
-            {
-                portfolio.Stocks.Add(new PortfolioStock
-                {
-                    StockId = stockId,
-                    Quantity = request.Quantity
-                });
-            }
-            else
-            {
-                stockEntry.Quantity = request.Quantity;
-            }
-
-            var updateResult = await portfolioService.UpdateAsync(portfolio);
-            if (!updateResult)
-                return TypedResults.Problem("更新投資組合失敗");
-
-            return TypedResults.Ok(portfolio);
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.BadRequest(new { error = ex.Message });
-        }
-    }
-
     private static async Task<IResult> UpdatePortfolioStockByName(
         IPortfolioService portfolioService,
         IStockService stockService,
@@ -174,50 +136,32 @@ public static class PortfolioEndpoints
             // 驗證投資組合
             var portfolio = await portfolioService.GetByIdAsync(id);
             if (portfolio is null)
-                return TypedResults.NotFound(new { message = "找不到指定的投資組合" });
+            {
+                return TypedResults.NotFound(new ApiResponse<string>("找不到指定的投資組合"));
+            }
 
             // 查詢股票
             var stock = await stockService.GetByNameOrAliasAsync(request.StockNameOrAlias);
             if (stock is null)
-                return TypedResults.NotFound(new { message = "找不到指定的股票" });
+            {
+                return TypedResults.NotFound(new ApiResponse<string>("找不到指定的股票"));
+            }
 
-            await UpdatePortfolioStock(portfolio, stock.Id, request.Quantity);
+            portfolioService.UpdatePortfolioStock(portfolio, stock.Id, request.Quantity);
 
             // 更新投資組合
             var updateResult = await portfolioService.UpdateAsync(portfolio);
             if (!updateResult)
-                return TypedResults.UnprocessableEntity(new { message = "更新投資組合失敗" });
-
-            return TypedResults.Ok(new
             {
-                message = "更新成功",
-                portfolio = portfolio
-            });
+                return TypedResults.UnprocessableEntity(new ApiResponse<string>("更新投資組合失敗"));
+            }
+
+
+            return TypedResults.Ok(new ApiResponse<Portfolio>("更新成功", portfolio));
         }
         catch (Exception ex)
         {
-            return TypedResults.BadRequest(new { message = ex.Message });
+            return TypedResults.BadRequest(new ApiResponse<string>(ex.Message));
         }
-    }
-
-    // 抽取更新股票邏輯為獨立方法
-    private static Task UpdatePortfolioStock(Portfolio portfolio, ObjectId stockId, decimal quantity)
-    {
-        var stockEntry = portfolio.Stocks.FirstOrDefault(s => s.StockId == stockId);
-
-        if (stockEntry is null)
-        {
-            portfolio.Stocks.Add(new PortfolioStock
-            {
-                StockId = stockId,
-                Quantity = quantity
-            });
-        }
-        else
-        {
-            stockEntry.Quantity = quantity;
-        }
-
-        return Task.CompletedTask;
     }
 }
