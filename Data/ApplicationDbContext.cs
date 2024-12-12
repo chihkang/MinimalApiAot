@@ -6,7 +6,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Stock> Stocks { get; init; }
 
     public DbSet<Portfolio> Portfolios { get; init; }
-
+    public DbSet<PortfolioDailyValue> PortfolioDailyValues { get; init; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -66,6 +66,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .IsRequired();
 
             entity.OwnsMany(e => e.Stocks);
+        });
+        modelBuilder.Entity<PortfolioDailyValue>(entity =>
+        {
+            entity.ToCollection("portfolio_daily_values");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.PortfolioId)
+                .IsRequired();
+            entity.Property(e => e.TotalValueTwd)
+                .IsRequired();
         });
     }
 }

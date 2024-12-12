@@ -104,7 +104,7 @@ public static class PortfolioEndpoints
         }
         catch (Exception ex)
         {
-            return TypedResults.BadRequest(new { error = ex.Message });
+            return TypedResults.BadRequest(new ApiResponse<string>(ex.Message));
         }
     }
 
