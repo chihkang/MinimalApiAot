@@ -1,5 +1,4 @@
 // 註冊 MongoDB 序列化器
-
 BsonSerializer.RegisterSerializer(typeof(decimal), new DecimalSerializer(BsonType.Decimal128));
 BsonSerializer.RegisterSerializer(typeof(decimal?),
     new NullableSerializer<decimal>(new DecimalSerializer(BsonType.Decimal128)));
@@ -8,23 +7,28 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. 驗證配置
 var mongoSettings = builder.Configuration.GetSection("MongoSettings").Get<MongoSettings>();
-if (mongoSettings == null || string.IsNullOrEmpty(mongoSettings.ConnectionString))
-{
-    throw new InvalidOperationException("MongoDB settings are not properly configured");
-}
-
-// 註冊 MongoDB EF Core
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// 1. 首先註冊 MongoClient 為單例
+builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     try
     {
-        var mongoClient = new MongoClient(mongoSettings.ConnectionString);
-        options.UseMongoDB(mongoClient, mongoSettings.DatabaseName);
+        return new MongoClient(mongoSettings?.ConnectionString);
     }
     catch (Exception ex)
     {
         throw new InvalidOperationException("Failed to initialize MongoDB connection", ex);
     }
+});
+
+// 2. 修改 DbContext 的註冊方式
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+{
+    var mongoClient = serviceProvider.GetRequiredService<IMongoClient>();
+    options.UseMongoDB(mongoClient, mongoSettings.DatabaseName);
+    
+    // 加入警告配置
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning));
 });
 // 2. 註冊服務
 builder.Services.AddEndpointsApiExplorer();

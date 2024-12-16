@@ -52,5 +52,5 @@ PUT {{MinimalApiAot_HostAddress}}/api/stocks/2534%3ATPE/price?newPrice=27.7
 Accept: application/json
 
 ### put stocks api/stocks/minimal
-PUT {{MinimalApiAot_HostAddress}}/api/stocks/id/67283b36447a55a757f87daf/price?newPrice=32
+PUT {{MinimalApiAot_HostAddress}}/api/stocks/id/67283b36447a55a757f87daf/price?newPrice=31
 Accept: application/json

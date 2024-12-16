@@ -23,3 +23,4 @@ global using MinimalApiAot.Converter;
 global using MongoDB.Bson.Serialization.Attributes;
 global using MinimalApiAot.Models.DTO;
 global using MinimalApiAot.Models.Entities;
+global using Microsoft.EntityFrameworkCore.Diagnostics;
