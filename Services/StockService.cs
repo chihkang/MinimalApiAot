@@ -39,6 +39,10 @@ public class StockService(ApplicationDbContext context, ILogger<StockService> lo
 
         var oldPrice = stock.Price;
         var now = DateTime.UtcNow;
+        
+        stock.Price = newPrice;
+        stock.LastUpdated = now;
+        
         await context.SaveChangesAsync();
 
         return new UpdateStockPriceResponse
