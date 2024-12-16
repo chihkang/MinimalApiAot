@@ -23,6 +23,39 @@ public static class StockEndpoints
                 Summary = "Update stock price by name (e.g., \"2330:TPE\") with optimized performance",
                 Description = "根據股票代碼更新股票價格，並返回更新前後的價格資訊"
             });
+        group.MapPut("/id/{stockId}/price", UpdateStockPriceById)
+            .WithName("UpdateStockPriceByID")
+            .WithOpenApi(operation => new OpenApiOperation(operation)
+            {
+                Summary = "Update stock price by ID (e.g., \"67283b36447a55a757f87daf\") with optimized performance",
+                Description = "根據股票ID更新股票價格，並返回更新前後的價格資訊"
+            });
+    }
+
+    private static async Task<IResult> UpdateStockPriceById(ObjectId stockId,
+        decimal newPrice,
+        IStockService stockService)
+    {
+        try
+        {
+            if (newPrice <= 0)
+            {
+                return Results.BadRequest(new { message = "股票價格必須大於0" });
+            }
+
+            var response = await stockService.UpdateStockPriceAsync(stockId, newPrice);
+
+            return response != null
+                ? Results.Ok(response)
+                : Results.NotFound(new { message = $"找不到股票: {stockId}" });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                title: "更新股票價格失敗",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
     }
 
     private static async Task<IResult> GetAllStocksMinimal(IStockService stockService)

@@ -6,4 +6,5 @@ public interface IStockService
     Task<UpdateStockPriceResponse?> UpdateStockPriceAsync(string name, decimal newPrice);
     Task<Stock?> GetByIdAsync(ObjectId id);
     Task<Stock?> GetByNameOrAliasAsync(string nameOrAlias);
+    Task<UpdateStockPriceResponse?> UpdateStockPriceAsync(ObjectId stockId, decimal newPrice);
 }

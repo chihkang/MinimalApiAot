@@ -30,6 +30,27 @@ public class StockService(ApplicationDbContext context, ILogger<StockService> lo
             throw;
         }
     }
+
+    public async Task<UpdateStockPriceResponse?> UpdateStockPriceAsync(ObjectId stockId, decimal newPrice)
+    {
+        var stock = await context.Stocks
+            .FirstOrDefaultAsync(s => s.Id == stockId);
+        if (stock == null) return null;
+
+        var oldPrice = stock.Price;
+        var now = DateTime.UtcNow;
+        await context.SaveChangesAsync();
+
+        return new UpdateStockPriceResponse
+        {
+            Name = stock.Name,
+            OldPrice = oldPrice,
+            NewPrice = newPrice,
+            Currency = stock.Currency,
+            LastUpdated = now
+        };
+    }
+
     public async Task<IEnumerable<StockMinimalDto>> GetAllStocksMinimalAsync()
     {
         return await context.Stocks
