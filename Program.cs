@@ -1,10 +1,23 @@
 // 註冊 MongoDB 序列化器
+
+using DotNetEnv;
+
 BsonSerializer.RegisterSerializer(typeof(decimal), new DecimalSerializer(BsonType.Decimal128));
 BsonSerializer.RegisterSerializer(typeof(decimal?),
     new NullableSerializer<decimal>(new DecimalSerializer(BsonType.Decimal128)));
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 載入 .env 檔案
+Env.Load();
+
+// 2. 確保配置來源正確設定
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables() // 添加環境變數支援
+    .Build();
 // 1. 驗證配置
 var mongoSettings = builder.Configuration.GetSection("MongoSettings").Get<MongoSettings>();
 // 1. 首先註冊 MongoClient 為單例

@@ -98,3 +98,8 @@ TestResults/
 # *.deps.json
 # *.dll
 # *.exe
+
+# 環境變數檔案
+.env
+.env.local
+.env.*
