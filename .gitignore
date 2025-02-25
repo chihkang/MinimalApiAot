@@ -103,3 +103,4 @@ TestResults/
 .env
 .env.local
 .env.*
+.env
