@@ -99,14 +99,15 @@ public class PortfolioDailyValueService(
 
     private static DateTimeRange GetDateRange(TimeRange range)
     {
-        var endDate = DateTime.UtcNow.Date;
+        var today = DateTime.UtcNow.Date;
+        var endDate = today.AddDays(1).AddTicks(-1);
         var startDate = range switch
         {
-            TimeRange.OneMonth => endDate.AddMonths(-1),
-            TimeRange.ThreeMonths => endDate.AddMonths(-3),
-            TimeRange.SixMonths => endDate.AddMonths(-6),
-            TimeRange.OneYear => endDate.AddMonths(-12),
-            _ => endDate.AddMonths(-1)
+            TimeRange.OneMonth => today.AddMonths(-1),
+            TimeRange.ThreeMonths => today.AddMonths(-3),
+            TimeRange.SixMonths => today.AddMonths(-6),
+            TimeRange.OneYear => today.AddMonths(-12),
+            _ => today.AddMonths(-1)
         };
 
         return new DateTimeRange(startDate, endDate);
