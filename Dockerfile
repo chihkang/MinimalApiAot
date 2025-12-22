@@ -11,7 +11,7 @@ COPY . .
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=true
 
 # 運行階段
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-amd64
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
 WORKDIR /app
 COPY --from=build /app/publish .
 
