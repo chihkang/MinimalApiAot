@@ -11,6 +11,35 @@ var builder = WebApplication.CreateBuilder(args);
 // 載入 .env 檔案
 Env.Load();
 
+static string EnsureMongoTlsOptions(string connectionString, bool useTls, bool allowInsecureTls)
+{
+    if (string.IsNullOrWhiteSpace(connectionString))
+        return connectionString;
+
+    var parts = connectionString.Split('?', 2);
+    var basePart = parts[0];
+    var query = parts.Length > 1 ? parts[1] : string.Empty;
+
+    var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var segment in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+    {
+        var kv = segment.Split('=', 2);
+        options[kv[0]] = kv.Length == 2 ? kv[1] : string.Empty;
+    }
+
+    var tls = useTls ? "true" : "false";
+    options["tls"] = tls;
+    options["ssl"] = tls;
+
+    var insecure = allowInsecureTls ? "true" : "false";
+    options["tlsInsecure"] = insecure;
+    options["tlsAllowInvalidCertificates"] = insecure;
+    options["tlsAllowInvalidHostnames"] = insecure;
+
+    var newQuery = string.Join("&", options.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+    return newQuery.Length == 0 ? basePart : $"{basePart}?{newQuery}";
+}
+
 // 2. 確保配置來源正確設定
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -18,14 +47,30 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables() // 添加環境變數支援
     .Build();
-// 1. 驗證配置
-var mongoSettings = builder.Configuration.GetSection("MongoSettings").Get<MongoSettings>();
+
+var mongoSettings = builder.Configuration.GetSection("MongoSettings").Get<MongoSettings>()
+                    ?? throw new InvalidOperationException("MongoSettings section is required.");
+
+if (string.IsNullOrWhiteSpace(mongoSettings.ConnectionString))
+    throw new InvalidOperationException("MongoSettings:ConnectionString is required (set env var MongoSettings__ConnectionString).");
+
+if (string.IsNullOrWhiteSpace(mongoSettings.DatabaseName))
+    throw new InvalidOperationException("MongoSettings:DatabaseName is required (set env var MongoSettings__DatabaseName).");
+
+if (!builder.Environment.IsDevelopment() && (!mongoSettings.UseSsl || mongoSettings.AllowInsecureSsl))
+    throw new InvalidOperationException("In production, MongoDB TLS must be enabled and insecure TLS must be disabled.");
+
 // 1. 首先註冊 MongoClient 為單例
-builder.Services.AddSingleton<IMongoClient>(sp =>
+builder.Services.AddSingleton<IMongoClient>(_ =>
 {
     try
     {
-        return new MongoClient(mongoSettings?.ConnectionString);
+        var connectionString = EnsureMongoTlsOptions(
+            mongoSettings.ConnectionString,
+            useTls: mongoSettings.UseSsl,
+            allowInsecureTls: mongoSettings.AllowInsecureSsl);
+
+        return new MongoClient(connectionString);
     }
     catch (Exception ex)
     {
