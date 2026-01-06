@@ -30,6 +30,36 @@ public static class StockEndpoints
                 Summary = "Update stock price by ID (e.g., \"67283b36447a55a757f87daf\") with optimized performance",
                 Description = "根據股票ID更新股票價格，並返回更新前後的價格資訊"
             });
+
+        group.MapPut("/batch-price", UpdateStockPricesBatch)
+            .WithName("UpdateStockPricesBatch")
+            .WithOpenApi(operation => new OpenApiOperation(operation)
+            {
+                Summary = "Update multiple stock prices in batch (Max 20)",
+                Description = "批次更新多支股票價格，單次上限 20 筆。採用部分成功策略，會回傳成功、找不到 ID 以及無效 ID 的清單。"
+            });
+    }
+
+    private static async Task<IResult> UpdateStockPricesBatch(BatchUpdateStockPriceRequest request,
+        IStockService stockService)
+    {
+        if (request.Updates == null || request.Updates.Count == 0)
+        {
+            return Results.BadRequest(new { message = "更新清單不可為空" });
+        }
+
+        if (request.Updates.Count > 20)
+        {
+            return Results.BadRequest(new { message = "單次批次更新上限為 20 筆" });
+        }
+
+        if (request.Updates.Any(u => u.NewPrice <= 0))
+        {
+            return Results.BadRequest(new { message = "所有股票價格必須大於 0" });
+        }
+
+        var response = await stockService.UpdateStockPricesBatchAsync(request.Updates);
+        return Results.Ok(response);
     }
 
     private static async Task<IResult> UpdateStockPriceById(ObjectId stockId,
