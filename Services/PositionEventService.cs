@@ -510,32 +510,7 @@ public class PositionEventService(
                 $"Invalid quantityAfter: expected {expectedQuantityAfter} (quantityBefore {request.QuantityBefore} + quantityDelta {request.QuantityDelta}), got {request.QuantityAfter}");
         }
 
-        // Validate totalCostAfter based on operation type
-        if (request.Type == PositionEventType.BUY)
-        {
-            // BUY: totalCostAfter = totalCostBefore + (quantityDelta * unitPrice)
-            var expectedTotalCostAfter = request.TotalCostBefore + (request.QuantityDelta * request.UnitPrice);
-            if (Math.Abs(request.TotalCostAfter - expectedTotalCostAfter) > ValidationTolerance)
-            {
-                return ValidationResult.Invalid(
-                    $"Invalid totalCostAfter for BUY: expected {expectedTotalCostAfter:F2}, got {request.TotalCostAfter:F2}");
-            }
-        }
-        else if (request.Type == PositionEventType.SELL)
-        {
-            // SELL: totalCostAfter = totalCostBefore - (|quantityDelta| * averageCost)
-            // where averageCost = totalCostBefore / quantityBefore
-            if (request.QuantityBefore > 0)
-            {
-                var averageCost = request.TotalCostBefore / request.QuantityBefore;
-                var expectedTotalCostAfter = request.TotalCostBefore - (Math.Abs(request.QuantityDelta) * averageCost);
-                if (Math.Abs(request.TotalCostAfter - expectedTotalCostAfter) > ValidationTolerance)
-                {
-                    return ValidationResult.Invalid(
-                        $"Invalid totalCostAfter for SELL: expected {expectedTotalCostAfter:F2} (using average cost {averageCost:F2}), got {request.TotalCostAfter:F2}");
-                }
-            }
-        }
+        // totalCostAfter is trusted from client (iOS), no server-side validation
 
         // Validate quantityDelta sign matches operation type
         if (request.Type == PositionEventType.BUY && request.QuantityDelta < 0)
