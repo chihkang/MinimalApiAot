@@ -24,3 +24,4 @@ global using MongoDB.Bson.Serialization.Attributes;
 global using MinimalApiAot.Models.DTO;
 global using MinimalApiAot.Models.Entities;
 global using Microsoft.EntityFrameworkCore.Diagnostics;
+global using System.ComponentModel.DataAnnotations;

@@ -30,6 +30,22 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(ApiResponse<Portfolio>))]
 [JsonSerializable(typeof(ApiResponse<string>))]
 [JsonSerializable(typeof(PortfolioDailyValueResponse))]
+// PositionEvent types
+[JsonSerializable(typeof(PositionEvent))]
+[JsonSerializable(typeof(List<PositionEvent>))]
+[JsonSerializable(typeof(PositionEventType))]
+[JsonSerializable(typeof(Currency))]
+[JsonSerializable(typeof(CreatePositionEventRequest))]
+[JsonSerializable(typeof(UpdatePositionEventRequest))]
+[JsonSerializable(typeof(PositionEventResponseDto))]
+[JsonSerializable(typeof(List<PositionEventResponseDto>))]
+[JsonSerializable(typeof(PaginationRequest))]
+[JsonSerializable(typeof(PaginatedResponse<PositionEventResponseDto>))]
+[JsonSerializable(typeof(PositionEventQueryRequest))]
+[JsonSerializable(typeof(PositionEventCreateResult))]
+[JsonSerializable(typeof(PositionEventUpdateResult))]
+[JsonSerializable(typeof(PositionEventDeleteResult))]
+[JsonSerializable(typeof(PositionEventErrorType))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

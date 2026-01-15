@@ -96,6 +96,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IPortfolioService, PortfolioService>();
 builder.Services.AddScoped<IPortfolioDailyValueService, PortfolioDailyValueService>();
+builder.Services.AddScoped<IPositionEventService, PositionEventService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolver = AppJsonSerializerContext.Default;
@@ -129,5 +130,6 @@ app.MapUserEndpoints();
 app.MapStockEndpoints();
 app.MapPortfolioEndpoints();
 app.MapPortfolioDailyValueEndpoints();
+app.MapPositionEventEndpoints();
 
 app.Run();

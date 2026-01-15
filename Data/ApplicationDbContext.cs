@@ -7,6 +7,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<Portfolio> Portfolios { get; init; }
     public DbSet<PortfolioDailyValue> PortfolioDailyValues { get; init; }
+    public DbSet<PositionEvent> PositionEvents { get; init; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -65,6 +66,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(e => e.LastUpdated)
                 .IsRequired();
 
+            // Version field for optimistic concurrency
+            entity.Property(e => e.Version)
+                .IsConcurrencyToken();
+
             entity.OwnsMany(e => e.Stocks);
         });
         modelBuilder.Entity<PortfolioDailyValue>(entity =>
@@ -76,6 +81,50 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .IsRequired();
             entity.Property(e => e.TotalValueTwd)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<PositionEvent>(entity =>
+        {
+            entity.ToCollection("positionEvents");
+            entity.HasKey(e => e.Id);
+
+            // Required properties
+            entity.Property(e => e.OperationId)
+                .IsRequired();
+
+            entity.Property(e => e.UserId)
+                .IsRequired();
+
+            entity.Property(e => e.StockId)
+                .IsRequired();
+
+            entity.Property(e => e.Type)
+                .IsRequired();
+
+            entity.Property(e => e.TradeAt)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .IsRequired();
+
+            entity.Property(e => e.Currency)
+                .IsRequired();
+
+            entity.Property(e => e.Source)
+                .IsRequired();
+
+            entity.Property(e => e.AppVersion)
+                .IsRequired();
+
+            // Unique index on operationId
+            entity.HasIndex(e => e.OperationId)
+                .IsUnique();
+
+            // Compound index on userId + tradeAt (descending) for user queries
+            entity.HasIndex(e => new { e.UserId, e.TradeAt });
+
+            // Compound index on stockId + tradeAt (descending) for stock queries
+            entity.HasIndex(e => new { e.StockId, e.TradeAt });
         });
     }
 }

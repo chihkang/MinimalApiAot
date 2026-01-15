@@ -13,6 +13,13 @@ public class Portfolio
     [BsonElement("stocks")] public List<PortfolioStock> Stocks { get; set; } = new();
 
     [BsonElement("lastUpdated")] public DateTime LastUpdated { get; set; }
+
+    /// <summary>
+    /// Version for optimistic concurrency control
+    /// </summary>
+    [BsonElement("version")]
+    [ConcurrencyCheck]
+    public long Version { get; set; }
     // 添加導航屬性
     [JsonIgnore]
 
