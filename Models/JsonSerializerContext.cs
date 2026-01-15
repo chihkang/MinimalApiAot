@@ -46,6 +46,8 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(PositionEventUpdateResult))]
 [JsonSerializable(typeof(PositionEventDeleteResult))]
 [JsonSerializable(typeof(PositionEventErrorType))]
+[JsonSerializable(typeof(ErrorResponse))]
+[JsonSerializable(typeof(SuccessResponse))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

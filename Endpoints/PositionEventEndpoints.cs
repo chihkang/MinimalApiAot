@@ -101,14 +101,14 @@ public static class PositionEventEndpoints
     {
         if (!ObjectId.TryParse(id, out var objectId))
         {
-            return Results.BadRequest(new { message = "Invalid ID format" });
+            return Results.BadRequest(ErrorResponse.Create("Invalid ID format"));
         }
 
         var positionEvent = await positionEventService.GetByIdAsync(objectId, cancellationToken);
 
         return positionEvent != null
             ? Results.Ok(PositionEventResponseDto.FromEntity(positionEvent))
-            : Results.NotFound(new { message = $"PositionEvent with ID {id} not found" });
+            : Results.NotFound(ErrorResponse.Create($"PositionEvent with ID {id} not found"));
     }
 
     private static async Task<IResult> GetByOperationId(
@@ -120,7 +120,7 @@ public static class PositionEventEndpoints
 
         return positionEvent != null
             ? Results.Ok(PositionEventResponseDto.FromEntity(positionEvent))
-            : Results.NotFound(new { message = $"PositionEvent with operationId {operationId} not found" });
+            : Results.NotFound(ErrorResponse.Create($"PositionEvent with operationId {operationId} not found"));
     }
 
     private static async Task<IResult> GetByUserId(
@@ -135,7 +135,7 @@ public static class PositionEventEndpoints
     {
         if (!ObjectId.TryParse(userId, out var userObjectId))
         {
-            return Results.BadRequest(new { message = "Invalid userId format" });
+            return Results.BadRequest(ErrorResponse.Create("Invalid userId format"));
         }
 
         var query = new PositionEventQueryRequest
@@ -163,7 +163,7 @@ public static class PositionEventEndpoints
     {
         if (!ObjectId.TryParse(stockId, out var stockObjectId))
         {
-            return Results.BadRequest(new { message = "Invalid stockId format" });
+            return Results.BadRequest(ErrorResponse.Create("Invalid stockId format"));
         }
 
         var query = new PositionEventQueryRequest
@@ -197,29 +197,21 @@ public static class PositionEventEndpoints
 
             return result.ErrorType switch
             {
-                PositionEventErrorType.DuplicateOperationId => Results.Conflict(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
-                PositionEventErrorType.ConcurrencyConflict => Results.Conflict(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
+                PositionEventErrorType.DuplicateOperationId => Results.Conflict(
+                    ErrorResponse.Create(result.ErrorMessage!, result.ErrorType.ToString())
+                ),
+                PositionEventErrorType.ConcurrencyConflict => Results.Conflict(
+                    ErrorResponse.Create(result.ErrorMessage!, result.ErrorType.ToString())
+                ),
                 PositionEventErrorType.NotFound or
                 PositionEventErrorType.UserNotFound or
                 PositionEventErrorType.StockNotFound or
-                PositionEventErrorType.PortfolioNotFound => Results.NotFound(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
-                PositionEventErrorType.ValidationFailed => Results.BadRequest(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
+                PositionEventErrorType.PortfolioNotFound => Results.NotFound(
+                    ErrorResponse.Create(result.ErrorMessage!, result.ErrorType.ToString())
+                ),
+                PositionEventErrorType.ValidationFailed => Results.BadRequest(
+                    ErrorResponse.Create(result.ErrorMessage!, result.ErrorType.ToString())
+                ),
                 _ => Results.Problem(
                     title: "Failed to create position event",
                     detail: result.ErrorMessage,
@@ -245,7 +237,7 @@ public static class PositionEventEndpoints
     {
         if (!ObjectId.TryParse(id, out var objectId))
         {
-            return Results.BadRequest(new { message = "Invalid ID format" });
+            return Results.BadRequest(ErrorResponse.Create("Invalid ID format"));
         }
 
         try
@@ -259,21 +251,15 @@ public static class PositionEventEndpoints
 
             return result.ErrorType switch
             {
-                PositionEventErrorType.NotFound => Results.NotFound(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
-                PositionEventErrorType.ConcurrencyConflict => Results.Conflict(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
-                PositionEventErrorType.ValidationFailed => Results.BadRequest(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
+                PositionEventErrorType.NotFound => Results.NotFound(
+                    ErrorResponse.Create(result.ErrorMessage!, result.ErrorType.ToString())
+                ),
+                PositionEventErrorType.ConcurrencyConflict => Results.Conflict(
+                    ErrorResponse.Create(result.ErrorMessage!, result.ErrorType.ToString())
+                ),
+                PositionEventErrorType.ValidationFailed => Results.BadRequest(
+                    ErrorResponse.Create(result.ErrorMessage!, result.ErrorType.ToString())
+                ),
                 _ => Results.Problem(
                     title: "Failed to update position event",
                     detail: result.ErrorMessage,
@@ -298,7 +284,7 @@ public static class PositionEventEndpoints
     {
         if (!ObjectId.TryParse(id, out var objectId))
         {
-            return Results.BadRequest(new { message = "Invalid ID format" });
+            return Results.BadRequest(ErrorResponse.Create("Invalid ID format"));
         }
 
         try
@@ -307,21 +293,13 @@ public static class PositionEventEndpoints
 
             if (result.Success)
             {
-                return Results.Ok(new { message = "Position event deleted and portfolio rolled back successfully" });
+                return Results.Ok(SuccessResponse.Create("Position event deleted and portfolio rolled back successfully"));
             }
 
             return result.ErrorType switch
             {
-                PositionEventErrorType.NotFound => Results.NotFound(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
-                PositionEventErrorType.ConcurrencyConflict => Results.Conflict(new
-                {
-                    message = result.ErrorMessage,
-                    errorType = result.ErrorType.ToString()
-                }),
+                PositionEventErrorType.NotFound => Results.NotFound(ErrorResponse.Create(result.ErrorMessage, result.ErrorType.ToString())),
+                PositionEventErrorType.ConcurrencyConflict => Results.Conflict(ErrorResponse.Create(result.ErrorMessage, result.ErrorType.ToString())),
                 _ => Results.Problem(
                     title: "Failed to delete position event",
                     detail: result.ErrorMessage,

@@ -63,7 +63,7 @@ public class PositionEvent
     [BsonElement("quantityBefore")]
     [BsonRepresentation(BsonType.Decimal128)]
     [JsonPropertyName("quantityBefore")]
-    public decimal QuantityBefore { get; set; }
+    public decimal? QuantityBefore { get; set; }
 
     /// <summary>
     /// Quantity held after this operation (should equal quantityBefore + quantityDelta for BUY/SELL)
@@ -71,7 +71,7 @@ public class PositionEvent
     [BsonElement("quantityAfter")]
     [BsonRepresentation(BsonType.Decimal128)]
     [JsonPropertyName("quantityAfter")]
-    public decimal QuantityAfter { get; set; }
+    public decimal? QuantityAfter { get; set; }
 
     /// <summary>
     /// Change in quantity (positive for BUY, negative for SELL)
@@ -79,7 +79,7 @@ public class PositionEvent
     [BsonElement("quantityDelta")]
     [BsonRepresentation(BsonType.Decimal128)]
     [JsonPropertyName("quantityDelta")]
-    public decimal QuantityDelta { get; set; }
+    public decimal? QuantityDelta { get; set; }
 
     /// <summary>
     /// Currency of the transaction (TWD or USD)
@@ -95,7 +95,7 @@ public class PositionEvent
     [BsonElement("totalCostBefore")]
     [BsonRepresentation(BsonType.Decimal128)]
     [JsonPropertyName("totalCostBefore")]
-    public decimal TotalCostBefore { get; set; }
+    public decimal? TotalCostBefore { get; set; }
 
     /// <summary>
     /// Total cost basis after this operation (passed from iOS, validated by service)
@@ -103,7 +103,7 @@ public class PositionEvent
     [BsonElement("totalCostAfter")]
     [BsonRepresentation(BsonType.Decimal128)]
     [JsonPropertyName("totalCostAfter")]
-    public decimal TotalCostAfter { get; set; }
+    public decimal? TotalCostAfter { get; set; }
 
     /// <summary>
     /// Price per unit for this transaction
@@ -111,7 +111,7 @@ public class PositionEvent
     [BsonElement("unitPrice")]
     [BsonRepresentation(BsonType.Decimal128)]
     [JsonPropertyName("unitPrice")]
-    public decimal UnitPrice { get; set; }
+    public decimal? UnitPrice { get; set; }
 
     /// <summary>
     /// Source of the event (e.g., "ios", "android", "web")

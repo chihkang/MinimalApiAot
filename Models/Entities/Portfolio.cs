@@ -19,7 +19,7 @@ public class Portfolio
     /// </summary>
     [BsonElement("version")]
     [ConcurrencyCheck]
-    public long Version { get; set; }
+    public long? Version { get; set; }
     // 添加導航屬性
     [JsonIgnore]
 

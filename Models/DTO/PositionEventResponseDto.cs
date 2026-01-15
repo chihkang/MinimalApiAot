@@ -27,25 +27,25 @@ public record PositionEventResponseDto
     public required DateTime CreatedAt { get; init; }
 
     [JsonPropertyName("quantityBefore")]
-    public required decimal QuantityBefore { get; init; }
+    public decimal? QuantityBefore { get; init; }
 
     [JsonPropertyName("quantityAfter")]
-    public required decimal QuantityAfter { get; init; }
+    public decimal? QuantityAfter { get; init; }
 
     [JsonPropertyName("quantityDelta")]
-    public required decimal QuantityDelta { get; init; }
+    public decimal? QuantityDelta { get; init; }
 
     [JsonPropertyName("currency")]
     public required Currency Currency { get; init; }
 
     [JsonPropertyName("totalCostBefore")]
-    public required decimal TotalCostBefore { get; init; }
+    public decimal? TotalCostBefore { get; init; }
 
     [JsonPropertyName("totalCostAfter")]
-    public required decimal TotalCostAfter { get; init; }
+    public decimal? TotalCostAfter { get; init; }
 
     [JsonPropertyName("unitPrice")]
-    public required decimal UnitPrice { get; init; }
+    public decimal? UnitPrice { get; init; }
 
     [JsonPropertyName("source")]
     public required string Source { get; init; }

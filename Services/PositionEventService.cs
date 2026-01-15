@@ -196,7 +196,7 @@ public class PositionEventService(
                 // Update portfolio stock quantity
                 UpdatePortfolioStock(portfolio, stockId, request.QuantityAfter);
                 portfolio.LastUpdated = DateTime.UtcNow;
-                portfolio.Version++;
+                portfolio.Version = (portfolio.Version ?? 0) + 1;
 
                 // Add the position event
                 await context.PositionEvents.AddAsync(positionEvent, cancellationToken);
@@ -303,7 +303,7 @@ public class PositionEventService(
                     {
                         UpdatePortfolioStock(portfolio, positionEvent.StockId, request.QuantityAfter.Value);
                         portfolio.LastUpdated = DateTime.UtcNow;
-                        portfolio.Version++;
+                        portfolio.Version = (portfolio.Version ?? 0) + 1;
                     }
                 }
 
@@ -369,11 +369,11 @@ public class PositionEventService(
 
                 if (portfolio != null)
                 {
-                    // Rollback: set quantity back to quantityBefore
-                    var rolledBackQuantity = positionEvent.QuantityBefore;
+                    // Rollback: set quantity back to quantityBefore (use 0 if null for old records)
+                    var rolledBackQuantity = positionEvent.QuantityBefore ?? 0m;
                     UpdatePortfolioStock(portfolio, positionEvent.StockId, rolledBackQuantity);
                     portfolio.LastUpdated = DateTime.UtcNow;
-                    portfolio.Version++;
+                    portfolio.Version = (portfolio.Version ?? 0) + 1;
                 }
 
                 context.PositionEvents.Remove(positionEvent);

@@ -45,17 +45,17 @@ public static class StockEndpoints
     {
         if (request.Updates == null || request.Updates.Count == 0)
         {
-            return Results.BadRequest(new { message = "更新清單不可為空" });
+            return Results.BadRequest(ErrorResponse.Create("更新清單不可為空"));
         }
 
         if (request.Updates.Count > 20)
         {
-            return Results.BadRequest(new { message = "單次批次更新上限為 20 筆" });
+            return Results.BadRequest(ErrorResponse.Create("單次批次更新上限為 20 筆"));
         }
 
         if (request.Updates.Any(u => u.NewPrice <= 0))
         {
-            return Results.BadRequest(new { message = "所有股票價格必須大於 0" });
+            return Results.BadRequest(ErrorResponse.Create("所有股票價格必須大於 0"));
         }
 
         var response = await stockService.UpdateStockPricesBatchAsync(request.Updates);
@@ -70,14 +70,14 @@ public static class StockEndpoints
         {
             if (newPrice <= 0)
             {
-                return Results.BadRequest(new { message = "股票價格必須大於0" });
+                return Results.BadRequest(ErrorResponse.Create("股票價格必須大於0"));
             }
 
             var response = await stockService.UpdateStockPriceAsync(stockId, newPrice);
 
             return response != null
                 ? Results.Ok(response)
-                : Results.NotFound(new { message = $"找不到股票: {stockId}" });
+                : Results.NotFound(ErrorResponse.Create($"找不到股票: {stockId}"));
         }
         catch (Exception ex)
         {
@@ -113,14 +113,14 @@ public static class StockEndpoints
         {
             if (newPrice <= 0)
             {
-                return Results.BadRequest(new { message = "股票價格必須大於0" });
+                return Results.BadRequest(ErrorResponse.Create("股票價格必須大於0"));
             }
 
             var response = await stockService.UpdateStockPriceAsync(name, newPrice);
 
             return response != null
                 ? Results.Ok(response)
-                : Results.NotFound(new { message = $"找不到股票代碼: {name}" });
+                : Results.NotFound(ErrorResponse.Create($"找不到股票代碼: {name}"));
         }
         catch (Exception ex)
         {
