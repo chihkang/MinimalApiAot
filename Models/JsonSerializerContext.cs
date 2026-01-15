@@ -2,8 +2,6 @@ namespace MinimalApiAot.Models;
 
 [JsonSourceGenerationOptions(WriteIndented = false)]
 [JsonSerializable(typeof(ProblemDetails))]
-[JsonSerializable(typeof(OpenApiInfo))]
-[JsonSerializable(typeof(OpenApiDocument))]
 [JsonSerializable(typeof(User))]
 [JsonSerializable(typeof(List<User>))]
 [JsonSerializable(typeof(UserSettings))]

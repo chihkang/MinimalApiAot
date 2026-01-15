@@ -5,39 +5,26 @@ public static class StockEndpoints
     public static void MapStockEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/stocks")
-            .WithTags("Stocks")
-            .WithOpenApi();
+            .WithTags("Stocks");
 
         group.MapGet("/minimal", GetAllStocksMinimal)
             .WithName("GetAllStocksMinimal")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Get all stocks with minimal information (ID, Name, and Alias)",
-                Description = "返回所有股票的基本資訊，包含代碼、名稱和別名"
-            });
+            .WithSummary("Get all stocks with minimal information (ID, Name, and Alias)")
+            .WithDescription("返回所有股票的基本資訊，包含代碼、名稱和別名");
 
         group.MapPut("/{name}/price", UpdateStockPrice)
             .WithName("UpdateStockPrice")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Update stock price by name (e.g., \"2330:TPE\") with optimized performance",
-                Description = "根據股票代碼更新股票價格，並返回更新前後的價格資訊"
-            });
+            .WithSummary("Update stock price by name (e.g., \"2330:TPE\") with optimized performance")
+            .WithDescription("根據股票代碼更新股票價格，並返回更新前後的價格資訊");
         group.MapPut("/id/{stockId}/price", UpdateStockPriceById)
             .WithName("UpdateStockPriceByID")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Update stock price by ID (e.g., \"67283b36447a55a757f87daf\") with optimized performance",
-                Description = "根據股票ID更新股票價格，並返回更新前後的價格資訊"
-            });
+            .WithSummary("Update stock price by ID (e.g., \"67283b36447a55a757f87daf\") with optimized performance")
+            .WithDescription("根據股票ID更新股票價格，並返回更新前後的價格資訊");
 
         group.MapPut("/batch-price", UpdateStockPricesBatch)
             .WithName("UpdateStockPricesBatch")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Update multiple stock prices in batch (Max 20)",
-                Description = "批次更新多支股票價格，單次上限 20 筆。採用部分成功策略，會回傳成功、找不到 ID 以及無效 ID 的清單。"
-            });
+            .WithSummary("Update multiple stock prices in batch (Max 20)")
+            .WithDescription("批次更新多支股票價格，單次上限 20 筆。採用部分成功策略，會回傳成功、找不到 ID 以及無效 ID 的清單。");
     }
 
     private static async Task<IResult> UpdateStockPricesBatch(BatchUpdateStockPriceRequest request,

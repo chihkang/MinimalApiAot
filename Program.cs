@@ -131,22 +131,46 @@ builder.Configuration
     .AddEnvironmentVariables() // 添加環境變數支援
     .Build();
 
+var entryAssemblyName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name ?? string.Empty;
+var isOpenApiGeneration = entryAssemblyName.Contains("getdocument", StringComparison.OrdinalIgnoreCase);
+var skipMongo = isOpenApiGeneration ||
+    string.Equals(Environment.GetEnvironmentVariable("SKIP_MONGO"), "true", StringComparison.OrdinalIgnoreCase);
+
 if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
 }
 
-builder.Services.AddOptions<MongoSettings>()
-    .Bind(builder.Configuration.GetSection("MongoSettings"))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+var mongoOptions = builder.Services.AddOptions<MongoSettings>()
+    .Bind(builder.Configuration.GetSection("MongoSettings"));
+if (!skipMongo)
+{
+    mongoOptions.ValidateDataAnnotations()
+        .ValidateOnStart();
+}
 
-var mongoSettings = builder.Configuration.GetSection("MongoSettings").Get<MongoSettings>()
-                    ?? throw new InvalidOperationException("MongoSettings section is required.");
+var mongoSettings = builder.Configuration.GetSection("MongoSettings").Get<MongoSettings>();
+if (mongoSettings == null)
+{
+    if (skipMongo)
+    {
+        mongoSettings = new MongoSettings
+        {
+            ConnectionString = "mongodb://localhost:27017",
+            DatabaseName = "openapi",
+            UseSsl = false,
+            AllowInsecureSsl = true
+        };
+    }
+    else
+    {
+        throw new InvalidOperationException("MongoSettings section is required.");
+    }
+}
 
 // 對於 mongodb+srv:// 協議，TLS 已自動啟用，不需要額外檢查
 var isSrvProtocol = mongoSettings.ConnectionString.StartsWith("mongodb+srv://", StringComparison.OrdinalIgnoreCase);
-if (!builder.Environment.IsDevelopment() && !isSrvProtocol && (!mongoSettings.UseSsl || mongoSettings.AllowInsecureSsl))
+if (!skipMongo && !builder.Environment.IsDevelopment() && !isSrvProtocol && (!mongoSettings.UseSsl || mongoSettings.AllowInsecureSsl))
     throw new InvalidOperationException("In production, MongoDB TLS must be enabled and insecure TLS must be disabled.");
 
 // 1. 首先註冊 MongoClient 為單例
@@ -205,7 +229,10 @@ builder.Services.AddLogging(logging =>
 });
 var app = builder.Build();
 
-EnsureMongoIndexes(app.Services.GetRequiredService<MongoDbContext>());
+if (!skipMongo)
+{
+    EnsureMongoIndexes(app.Services.GetRequiredService<MongoDbContext>());
+}
 
 // 在 Production 環境（如 Zeabur）不使用 HTTPS Redirect，因為平台已經處理了 HTTPS
 if (!app.Environment.IsProduction())
@@ -214,10 +241,13 @@ if (!app.Environment.IsProduction())
 }
 
 // Configure middleware
-if (app.Environment.IsDevelopment())
+var staticFileProvider = new FileExtensionContentTypeProvider();
+staticFileProvider.Mappings[".json"] = "application/json; charset=utf-8";
+
+app.UseStaticFiles(new StaticFileOptions
 {
-    app.MapOpenApi();
-}
+    ContentTypeProvider = staticFileProvider
+});
 
 app.MapHealthChecks("/health");
 

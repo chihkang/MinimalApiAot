@@ -23,8 +23,7 @@ public static class UserEndpoints
                     return Results.Problem("查詢使用者資料時發生錯誤");
                 }
             })
-            .WithName("GetAllUsers")
-            .WithOpenApi();
+            .WithName("GetAllUsers");
 
         // 依 ID 獲取使用者
         group.MapGet("/{id}", async (ObjectId id, IUserService userService, ILogger<IUserService> logger) =>
@@ -40,8 +39,7 @@ public static class UserEndpoints
                     return Results.Problem("查詢使用者資料時發生錯誤");
                 }
             })
-            .WithName("GetUserById")
-            .WithOpenApi();
+            .WithName("GetUserById");
 
         // 依電子郵件查詢使用者
         group.MapGet("/by-email/{email}",
@@ -58,8 +56,7 @@ public static class UserEndpoints
                         return Results.Problem("查詢使用者資料時發生錯誤");
                     }
                 })
-            .WithName("GetUserByEmail")
-            .WithOpenApi();
+            .WithName("GetUserByEmail");
 
         // 建立新使用者
         group.MapPost("/", async (CreateUserRequest request, IUserService userService,
@@ -89,8 +86,7 @@ public static class UserEndpoints
                     return Results.Problem("建立使用者時發生錯誤");
                 }
             })
-            .WithName("CreateUser")
-            .WithOpenApi();
+            .WithName("CreateUser");
 
         // 更新使用者
         group.MapPut("/{id}", async (ObjectId id, User user, IUserService userService, ILogger<IUserService> logger) =>
@@ -106,8 +102,7 @@ public static class UserEndpoints
                     return Results.Problem("更新使用者資料時發生錯誤");
                 }
             })
-            .WithName("UpdateUser")
-            .WithOpenApi();
+            .WithName("UpdateUser");
 
         // 刪除使用者
         group.MapDelete("/{id}", async (ObjectId id, IUserService userService, ILogger<IUserService> logger) =>
@@ -123,7 +118,6 @@ public static class UserEndpoints
                     return Results.Problem("刪除使用者時發生錯誤");
                 }
             })
-            .WithName("DeleteUser")
-            .WithOpenApi();
+            .WithName("DeleteUser");
     }
 }

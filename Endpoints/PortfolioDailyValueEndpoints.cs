@@ -5,18 +5,15 @@ public static class PortfolioDailyValueEndpoints
     public static void MapPortfolioDailyValueEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/portfolioDailyValue")
-            .WithTags("portfolioDailyValue")
-            .WithOpenApi();
+            .WithTags("portfolioDailyValue");
 
         group.MapGet("/{portfolioId}/history", GetAllPortfolioHistory)
             .WithName("GetPortfolioHistory")
-            .WithOpenApi()
             .WithDescription("Get portfolio daily value history")
             .WithDisplayName("Get portfolio history");
 
         group.MapGet("/{portfolioId}/summary", GetPortfolioSummary)
             .WithName("GetPortfolioSummary")
-            .WithOpenApi()
             .WithDescription("Get portfolio summary")
             .WithDisplayName("Get portfolio summary");
     }

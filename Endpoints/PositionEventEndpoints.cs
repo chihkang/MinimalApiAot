@@ -5,80 +5,55 @@ public static class PositionEventEndpoints
     public static void MapPositionEventEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/positionevents")
-            .WithTags("PositionEvents")
-            .WithOpenApi();
+            .WithTags("PositionEvents");
 
         // GET all position events (paginated)
         group.MapGet("/", GetAll)
             .WithName("GetAllPositionEvents")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Get all position events with pagination",
-                Description = "取得所有持倉異動紀錄，支援分頁"
-            });
+            .WithSummary("Get all position events with pagination")
+            .WithDescription("取得所有持倉異動紀錄，支援分頁");
 
         // GET position event by ID
         group.MapGet("/{id}", GetById)
             .WithName("GetPositionEventById")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Get position event by ID",
-                Description = "根據 ID 取得單筆持倉異動紀錄"
-            });
+            .WithSummary("Get position event by ID")
+            .WithDescription("根據 ID 取得單筆持倉異動紀錄");
 
         // GET position event by operationId
         group.MapGet("/operation/{operationId}", GetByOperationId)
             .WithName("GetPositionEventByOperationId")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Get position event by operation ID",
-                Description = "根據 operationId (UUID) 取得持倉異動紀錄"
-            });
+            .WithSummary("Get position event by operation ID")
+            .WithDescription("根據 operationId (UUID) 取得持倉異動紀錄");
 
         // GET position events by user ID (paginated, filtered)
         group.MapGet("/user/{userId}", GetByUserId)
             .WithName("GetPositionEventsByUserId")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Get position events by user ID with filtering",
-                Description = "取得指定使用者的持倉異動紀錄，支援按類型、日期範圍篩選，預設查詢最近一年，支援分頁"
-            });
+            .WithSummary("Get position events by user ID with filtering")
+            .WithDescription("取得指定使用者的持倉異動紀錄，支援按類型、日期範圍篩選，預設查詢最近一年，支援分頁");
 
         // GET position events by stock ID (paginated, filtered)
         group.MapGet("/stock/{stockId}", GetByStockId)
             .WithName("GetPositionEventsByStockId")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Get position events by stock ID with filtering",
-                Description = "取得指定股票的持倉異動紀錄，支援按類型、日期範圍篩選，預設查詢最近一年，支援分頁"
-            });
+            .WithSummary("Get position events by stock ID with filtering")
+            .WithDescription("取得指定股票的持倉異動紀錄，支援按類型、日期範圍篩選，預設查詢最近一年，支援分頁");
 
         // POST create position event
         group.MapPost("/", Create)
             .WithName("CreatePositionEvent")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Create a new position event",
-                Description = "建立新的持倉異動紀錄（BUY/SELL/REPLACE），同時同步更新 Portfolio 持倉數量。會驗證 iOS 傳入的計算欄位。"
-            });
+            .WithSummary("Create a new position event")
+            .WithDescription("建立新的持倉異動紀錄（BUY/SELL/REPLACE），同時同步更新 Portfolio 持倉數量。會驗證 iOS 傳入的計算欄位。");
 
         // PUT update position event
         group.MapPut("/{id}", Update)
             .WithName("UpdatePositionEvent")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Update an existing position event",
-                Description = "更新現有持倉異動紀錄（用於錯誤修正），同時同步更新 Portfolio 持倉數量"
-            });
+            .WithSummary("Update an existing position event")
+            .WithDescription("更新現有持倉異動紀錄（用於錯誤修正），同時同步更新 Portfolio 持倉數量");
 
         // DELETE position event
         group.MapDelete("/{id}", Delete)
             .WithName("DeletePositionEvent")
-            .WithOpenApi(operation => new OpenApiOperation(operation)
-            {
-                Summary = "Delete a position event",
-                Description = "刪除持倉異動紀錄，同時回滾 Portfolio 持倉數量至異動前狀態"
-            });
+            .WithSummary("Delete a position event")
+            .WithDescription("刪除持倉異動紀錄，同時回滾 Portfolio 持倉數量至異動前狀態");
     }
 
     #region Endpoint Handlers

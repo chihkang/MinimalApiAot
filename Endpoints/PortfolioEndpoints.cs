@@ -5,8 +5,7 @@ public static class PortfolioEndpoints
     public static void MapPortfolioEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/portfolios")
-            .WithTags("Portfolios")
-            .WithOpenApi();
+            .WithTags("Portfolios");
 
         group.MapGet("/", GetAllPortfolios)
             .WithName("GetAllPortfolios")
@@ -35,8 +34,7 @@ public static class PortfolioEndpoints
 
         group.MapPut("/{id}/stocks", UpdatePortfolioStockByName)
             .WithName("UpdatePortfolioStockByName")
-            .WithDescription("根據股票名稱或代號更新投資組合中的股票數量")
-            .WithOpenApi();
+            .WithDescription("根據股票名稱或代號更新投資組合中的股票數量");
     }
 
     private static async Task<IResult> GetPortfolioByUserName(IPortfolioService portfolioService, string userName)

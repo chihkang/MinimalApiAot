@@ -15,10 +15,16 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <!-- 全球化設定 -->
     <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Build-time OpenAPI 設定（AOT 使用靜態檔） -->
+    <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+    <OpenApiDocumentsDirectory>wwwroot</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name openapi --document-name v1</OpenApiGenerateDocumentsOptions>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.0" PrivateAssets="All" />
     <PackageReference Include="AspNetCore.HealthChecks.MongoDb" Version="9.0.0" />
     <PackageReference Include="MongoDB.Driver" Version="3.0.0" />
   </ItemGroup>
