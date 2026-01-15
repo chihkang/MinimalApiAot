@@ -118,7 +118,11 @@ builder.Services.AddLogging(logging =>
 });
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+// 在 Production 環境（如 Zeabur）不使用 HTTPS Redirect，因為平台已經處理了 HTTPS
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 
 // Configure middleware
 if (app.Environment.IsDevelopment())

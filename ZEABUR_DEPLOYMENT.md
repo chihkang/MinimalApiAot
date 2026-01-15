@@ -1,6 +1,22 @@
 # Zeabur 部署配置說明
 
-## MongoDB 連接設定
+## 重要修正
+
+### 1. HTTPS Redirect（關鍵修正）
+
+✅ **已修正**：在 Production 環境關閉後端 HTTPS Redirect
+
+```csharp
+// Zeabur 已經在前端處理 HTTPS，後端不需要再 redirect
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+```
+
+**原因：** Zeabur 平台已經處理了 HTTPS（對外是 https），如果後端再做 redirect 會造成 API 請求失敗。
+
+### 2. MongoDB 連接設定
 
 對於使用 `mongodb+srv://` 協議的 MongoDB Atlas 連接：
 
