@@ -1,15 +1,98 @@
 // 註冊 MongoDB 序列化器
 
-using DotNetEnv;
-
 BsonSerializer.RegisterSerializer(typeof(decimal), new DecimalSerializer(BsonType.Decimal128));
 BsonSerializer.RegisterSerializer(typeof(decimal?),
     new NullableSerializer<decimal>(new DecimalSerializer(BsonType.Decimal128)));
+BsonSerializer.RegisterSerializer(typeof(ObjectId), new ObjectIdSerializer(BsonType.ObjectId));
+BsonSerializer.RegisterSerializer(typeof(ObjectId?),
+    new NullableSerializer<ObjectId>(new ObjectIdSerializer(BsonType.ObjectId)));
+BsonSerializer.RegisterSerializer(typeof(DateTime), new DateTimeSerializer(DateTimeKind.Utc));
+BsonSerializer.RegisterSerializer(typeof(DateTime?),
+    new NullableSerializer<DateTime>(new DateTimeSerializer(DateTimeKind.Utc)));
+BsonSerializer.RegisterSerializer(typeof(PositionEventType), new EnumSerializer<PositionEventType>(BsonType.String));
+BsonSerializer.RegisterSerializer(typeof(Currency), new EnumSerializer<Currency>(BsonType.String));
+BsonSerializer.RegisterSerializer(typeof(string), new StringSerializer(BsonType.String));
+
+BsonSerializer.RegisterSerializer(typeof(long), new Int64Serializer(BsonType.Int64));
+BsonSerializer.RegisterSerializer(typeof(long?),
+    new NullableSerializer<long>(new Int64Serializer(BsonType.Int64)));
+
+RegisterMongoClassMaps();
+BsonSerializer.RegisterSerializer(
+    typeof(List<PortfolioStock>),
+    new PortfolioStockListSerializer());
+
+BsonDefaults.DynamicDocumentSerializer = new BsonDocumentSerializer();
+BsonDefaults.DynamicArraySerializer = new BsonArraySerializer();
+
+static void RegisterMongoClassMaps()
+{
+    if (!BsonClassMap.IsClassMapRegistered(typeof(User)))
+    {
+        BsonClassMap.RegisterClassMap<User>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+    }
+
+    if (!BsonClassMap.IsClassMapRegistered(typeof(UserSettings)))
+    {
+        BsonClassMap.RegisterClassMap<UserSettings>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+    }
+
+    if (!BsonClassMap.IsClassMapRegistered(typeof(Stock)))
+    {
+        BsonClassMap.RegisterClassMap<Stock>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+    }
+
+    if (!BsonClassMap.IsClassMapRegistered(typeof(PortfolioStock)))
+    {
+        BsonClassMap.RegisterClassMap<PortfolioStock>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+    }
+
+    if (!BsonClassMap.IsClassMapRegistered(typeof(Portfolio)))
+    {
+        BsonClassMap.RegisterClassMap<Portfolio>(cm =>
+        {
+            cm.AutoMap();
+            cm.MapMember(p => p.Stocks).SetSerializer(new PortfolioStockListSerializer());
+            cm.SetIgnoreExtraElements(true);
+        });
+    }
+
+    if (!BsonClassMap.IsClassMapRegistered(typeof(PortfolioDailyValue)))
+    {
+        BsonClassMap.RegisterClassMap<PortfolioDailyValue>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+    }
+
+    if (!BsonClassMap.IsClassMapRegistered(typeof(PositionEvent)))
+    {
+        BsonClassMap.RegisterClassMap<PositionEvent>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
-
-// 載入 .env 檔案
-Env.Load();
 
 static string EnsureMongoTlsOptions(string connectionString, bool useTls, bool allowInsecureTls)
 {
@@ -48,14 +131,18 @@ builder.Configuration
     .AddEnvironmentVariables() // 添加環境變數支援
     .Build();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
+
+builder.Services.AddOptions<MongoSettings>()
+    .Bind(builder.Configuration.GetSection("MongoSettings"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 var mongoSettings = builder.Configuration.GetSection("MongoSettings").Get<MongoSettings>()
                     ?? throw new InvalidOperationException("MongoSettings section is required.");
-
-if (string.IsNullOrWhiteSpace(mongoSettings.ConnectionString))
-    throw new InvalidOperationException("MongoSettings:ConnectionString is required (set env var MongoSettings__ConnectionString).");
-
-if (string.IsNullOrWhiteSpace(mongoSettings.DatabaseName))
-    throw new InvalidOperationException("MongoSettings:DatabaseName is required (set env var MongoSettings__DatabaseName).");
 
 // 對於 mongodb+srv:// 協議，TLS 已自動啟用，不需要額外檢查
 var isSrvProtocol = mongoSettings.ConnectionString.StartsWith("mongodb+srv://", StringComparison.OrdinalIgnoreCase);
@@ -82,20 +169,20 @@ builder.Services.AddSingleton<IMongoClient>(_ =>
         throw new InvalidOperationException("Failed to initialize MongoDB connection", ex);
     }
 });
-
-// 2. 修改 DbContext 的註冊方式
-builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+builder.Services.AddSingleton<IMongoDatabase>(serviceProvider =>
 {
     var mongoClient = serviceProvider.GetRequiredService<IMongoClient>();
-    options.UseMongoDB(mongoClient, mongoSettings.DatabaseName);
-    
-    // 加入警告配置
-    options.ConfigureWarnings(warnings =>
-        warnings.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning));
+    return mongoClient.GetDatabase(mongoSettings.DatabaseName);
 });
+builder.Services.AddSingleton<MongoDbContext>();
+builder.Services.AddHealthChecks()
+    .AddMongoDb(
+        serviceProvider => serviceProvider.GetRequiredService<IMongoClient>(),
+        name: "mongodb",
+        timeout: TimeSpan.FromSeconds(3));
 // 2. 註冊服務
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 // 註冊 UserService
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStockService, StockService>();
@@ -118,6 +205,8 @@ builder.Services.AddLogging(logging =>
 });
 var app = builder.Build();
 
+EnsureMongoIndexes(app.Services.GetRequiredService<MongoDbContext>());
+
 // 在 Production 環境（如 Zeabur）不使用 HTTPS Redirect，因為平台已經處理了 HTTPS
 if (!app.Environment.IsProduction())
 {
@@ -127,9 +216,10 @@ if (!app.Environment.IsProduction())
 // Configure middleware
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 }
+
+app.MapHealthChecks("/health");
 
 app.MapGet("/", () => "Hello World!");
 app.MapGet("/time", () => DateTime.UtcNow.ToString(CultureInfo.CurrentCulture));
@@ -142,3 +232,21 @@ app.MapPortfolioDailyValueEndpoints();
 app.MapPositionEventEndpoints();
 
 app.Run();
+
+static void EnsureMongoIndexes(MongoDbContext db)
+{
+    var positionEventIndexes = new List<CreateIndexModel<PositionEvent>>
+    {
+        new(
+            Builders<PositionEvent>.IndexKeys.Ascending(e => e.OperationId),
+            new CreateIndexOptions { Unique = true, Name = "ux_operationId" }),
+        new(
+            Builders<PositionEvent>.IndexKeys.Ascending(e => e.UserId).Descending(e => e.TradeAt),
+            new CreateIndexOptions { Name = "ix_user_tradeAt" }),
+        new(
+            Builders<PositionEvent>.IndexKeys.Ascending(e => e.StockId).Descending(e => e.TradeAt),
+            new CreateIndexOptions { Name = "ix_stock_tradeAt" })
+    };
+
+    db.PositionEvents.Indexes.CreateMany(positionEventIndexes);
+}

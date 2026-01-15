@@ -1,12 +1,17 @@
+using System.Text.RegularExpressions;
+using MongoDB.Bson;
+using MongoDB.Driver;
+
 namespace MinimalApiAot.Services;
 
-public class StockService(ApplicationDbContext context, ILogger<StockService> logger) : IStockService
+public class StockService(MongoDbContext db, ILogger<StockService> logger) : IStockService
 {
+    private readonly IMongoCollection<Stock> _stocks = db.Stocks;
     public async Task<Stock?> GetByIdAsync(ObjectId objectId)
     {
         try
         {
-            return await context.Stocks.FindAsync(objectId);
+            return await _stocks.Find(s => s.Id == objectId).FirstOrDefaultAsync();
         }
         catch (Exception ex)
         {
@@ -19,10 +24,13 @@ public class StockService(ApplicationDbContext context, ILogger<StockService> lo
     {
         try
         {
-            return await context.Stocks
-                .FirstOrDefaultAsync(s => 
-                    s.Name.ToLower() == nameOrAlias.ToLower() || 
-                    s.Alias.ToLower() == nameOrAlias.ToLower());
+            var escaped = Regex.Escape(nameOrAlias);
+            var regex = new BsonRegularExpression($"^{escaped}$", "i");
+            var filter = Builders<Stock>.Filter.Or(
+                Builders<Stock>.Filter.Regex(s => s.Name, regex),
+                Builders<Stock>.Filter.Regex(s => s.Alias, regex));
+
+            return await _stocks.Find(filter).FirstOrDefaultAsync();
         }
         catch (Exception ex)
         {
@@ -33,60 +41,63 @@ public class StockService(ApplicationDbContext context, ILogger<StockService> lo
 
     public async Task<UpdateStockPriceResponse?> UpdateStockPriceAsync(ObjectId stockId, decimal newPrice)
     {
-        var stock = await context.Stocks
-            .FirstOrDefaultAsync(s => s.Id == stockId);
-        if (stock == null) return null;
-
-        var oldPrice = stock.Price;
         var now = DateTime.UtcNow;
-        
-        stock.Price = newPrice;
-        stock.LastUpdated = now;
-        
-        await context.SaveChangesAsync();
+
+        var update = Builders<Stock>.Update
+            .Set(s => s.Price, newPrice)
+            .Set(s => s.LastUpdated, now);
+
+        var options = new FindOneAndUpdateOptions<Stock>
+        {
+            ReturnDocument = ReturnDocument.Before
+        };
+
+        var original = await _stocks.FindOneAndUpdateAsync(s => s.Id == stockId, update, options);
+        if (original == null) return null;
 
         return new UpdateStockPriceResponse
         {
-            Name = stock.Name,
-            OldPrice = oldPrice,
+            Name = original.Name,
+            OldPrice = original.Price,
             NewPrice = newPrice,
-            Currency = stock.Currency,
+            Currency = original.Currency,
             LastUpdated = now
         };
     }
 
     public async Task<IEnumerable<StockMinimalDto>> GetAllStocksMinimalAsync()
     {
-        return await context.Stocks
-            .AsNoTracking()
-            .Select(s => new StockMinimalDto(
-                s.Id,
-                s.Name,
-                s.Alias))
+        var stocks = await _stocks.Find(FilterDefinition<Stock>.Empty)
             .ToListAsync();
+
+        return stocks.Select(s => new StockMinimalDto(
+            s.Id,
+            s.Name,
+            s.Alias));
     }
 
     public async Task<UpdateStockPriceResponse?> UpdateStockPriceAsync(string name, decimal newPrice)
     {
-        var stock = await context.Stocks
-            .FirstOrDefaultAsync(s => s.Name == name);
-
-        if (stock == null) return null;
-
-        var oldPrice = stock.Price;
         var now = DateTime.UtcNow;
 
-        stock.Price = newPrice;
-        stock.LastUpdated = now;
+        var update = Builders<Stock>.Update
+            .Set(s => s.Price, newPrice)
+            .Set(s => s.LastUpdated, now);
 
-        await context.SaveChangesAsync();
+        var options = new FindOneAndUpdateOptions<Stock>
+        {
+            ReturnDocument = ReturnDocument.Before
+        };
+
+        var original = await _stocks.FindOneAndUpdateAsync(s => s.Name == name, update, options);
+        if (original == null) return null;
 
         return new UpdateStockPriceResponse
         {
-            Name = name,
-            OldPrice = oldPrice,
+            Name = original.Name,
+            OldPrice = original.Price,
             NewPrice = newPrice,
-            Currency = stock.Currency,
+            Currency = original.Currency,
             LastUpdated = now
         };
     }
@@ -111,9 +122,7 @@ public class StockService(ApplicationDbContext context, ILogger<StockService> lo
         if (validUpdates.Count == 0) return result;
 
         var stockIds = validUpdates.Keys.ToList();
-        var stocks = await context.Stocks
-            .Where(s => stockIds.Contains(s.Id))
-            .ToListAsync();
+        var stocks = await _stocks.Find(s => stockIds.Contains(s.Id)).ToListAsync();
 
         var foundIds = stocks.Select(s => s.Id).ToHashSet();
         foreach (var id in stockIds.Where(id => !foundIds.Contains(id)))
@@ -122,13 +131,19 @@ public class StockService(ApplicationDbContext context, ILogger<StockService> lo
         }
 
         var now = DateTime.UtcNow;
+        var updatesToWrite = new List<WriteModel<Stock>>();
+
         foreach (var stock in stocks)
         {
             var newPrice = validUpdates[stock.Id];
             var oldPrice = stock.Price;
 
-            stock.Price = newPrice;
-            stock.LastUpdated = now;
+            var filter = Builders<Stock>.Filter.Eq(s => s.Id, stock.Id);
+            var update = Builders<Stock>.Update
+                .Set(s => s.Price, newPrice)
+                .Set(s => s.LastUpdated, now);
+
+            updatesToWrite.Add(new UpdateOneModel<Stock>(filter, update));
 
             result.UpdatedStocks.Add(new UpdateStockPriceResponse
             {
@@ -140,9 +155,9 @@ public class StockService(ApplicationDbContext context, ILogger<StockService> lo
             });
         }
 
-        if (stocks.Count > 0)
+        if (updatesToWrite.Count > 0)
         {
-            await context.SaveChangesAsync();
+            await _stocks.BulkWriteAsync(updatesToWrite);
         }
 
         return result;

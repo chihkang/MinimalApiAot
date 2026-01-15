@@ -8,7 +8,9 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(List<User>))]
 [JsonSerializable(typeof(UserSettings))]
 [JsonSerializable(typeof(ObjectId))]
+[JsonSerializable(typeof(StockMinimalDto))]
 [JsonSerializable(typeof(IEnumerable<StockMinimalDto>))]
+[JsonSerializable(typeof(List<StockMinimalDto>))]
 [JsonSerializable(typeof(UpdateStockPriceResponse))]
 [JsonSerializable(typeof(Stock))]
 [JsonSerializable(typeof(Portfolio))]
@@ -30,6 +32,8 @@ namespace MinimalApiAot.Models;
 [JsonSerializable(typeof(ApiResponse<Portfolio>))]
 [JsonSerializable(typeof(ApiResponse<string>))]
 [JsonSerializable(typeof(PortfolioDailyValueResponse))]
+[JsonSerializable(typeof(TimeRange))]
+[JsonSerializable(typeof(DateTimeRange))]
 // PositionEvent types
 [JsonSerializable(typeof(PositionEvent))]
 [JsonSerializable(typeof(List<PositionEvent>))]

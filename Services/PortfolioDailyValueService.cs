@@ -1,10 +1,13 @@
+using MongoDB.Driver;
+
 namespace MinimalApiAot.Services;
 
 public class PortfolioDailyValueService(
-    ApplicationDbContext dbContext,
+    MongoDbContext db,
     ILogger<PortfolioDailyValueService> logger)
     : IPortfolioDailyValueService
 {
+    private readonly IMongoCollection<PortfolioDailyValue> _dailyValues = db.PortfolioDailyValues;
     public async Task<PortfolioDailyValueResponse?> GetPortfolioHistoryAsync(
         ObjectId portfolioId,
         TimeRange range,
@@ -14,14 +17,14 @@ public class PortfolioDailyValueService(
         var dateRange = GetDateRange(range);
 
         // 2. 直接在查詢中加入日期過濾，減少記憶體使用
-        var query = dbContext.PortfolioDailyValues
-            .Where(p => p.PortfolioId == portfolioId)
-            .Where(p => p.Date >= dateRange.StartDate && p.Date <= dateRange.EndDate)
-            .OrderBy(p => p.Date);
+        var filter = Builders<PortfolioDailyValue>.Filter.And(
+            Builders<PortfolioDailyValue>.Filter.Eq(p => p.PortfolioId, portfolioId),
+            Builders<PortfolioDailyValue>.Filter.Gte(p => p.Date, dateRange.StartDate),
+            Builders<PortfolioDailyValue>.Filter.Lte(p => p.Date, dateRange.EndDate));
 
-        // 3. 直接映射到所需的資料結構，減少記憶體使用
-        var dailyValues = await query
-            .Select(x => new DailyValueData
+        var dailyValues = await _dailyValues.Find(filter)
+            .SortBy(p => p.Date)
+            .Project(x => new DailyValueData
             {
                 Date = x.Date,
                 TotalValueTwd = x.TotalValueTwd
@@ -57,13 +60,14 @@ public class PortfolioDailyValueService(
     {
         var dateRange = GetDateRange(range);
 
-        var query = dbContext.PortfolioDailyValues
-            .Where(p => p.PortfolioId == portfolioId)
-            .Where(p => p.Date >= dateRange.StartDate && p.Date <= dateRange.EndDate)
-            .OrderBy(p => p.Date);
+        var filter = Builders<PortfolioDailyValue>.Filter.And(
+            Builders<PortfolioDailyValue>.Filter.Eq(p => p.PortfolioId, portfolioId),
+            Builders<PortfolioDailyValue>.Filter.Gte(p => p.Date, dateRange.StartDate),
+            Builders<PortfolioDailyValue>.Filter.Lte(p => p.Date, dateRange.EndDate));
 
-        var dailyValues = await query
-            .Select(x => new DailyValueData
+        var dailyValues = await _dailyValues.Find(filter)
+            .SortBy(p => p.Date)
+            .Project(x => new DailyValueData
             {
                 Date = x.Date,
                 TotalValueTwd = x.TotalValueTwd

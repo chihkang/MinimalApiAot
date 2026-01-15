@@ -2,21 +2,31 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 WORKDIR /src
 
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends clang lld zlib1g-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
 # 複製專案檔並還原相依套件
 COPY ["MinimalApiAot.csproj", "."]
 RUN dotnet restore "MinimalApiAot.csproj"
 
 # 複製所有檔案並建置應用程式
 COPY . .
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=true
+RUN dotnet publish -c Release -o /app/publish \
+	-r linux-x64 \
+	/p:PublishAot=true \
+	/p:PublishTrimmed=true \
+	/p:PublishSingleFile=true \
+	/p:StripSymbols=true \
+	/p:InvariantGlobalization=true
 
 # 運行階段
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-amd64
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled-amd64
 WORKDIR /app
 COPY --from=build /app/publish .
 
 ENV ASPNETCORE_URLS=http://+:80
 EXPOSE 80
 
-USER $APP_UID
-ENTRYPOINT ["dotnet", "MinimalApiAot.dll"]
+USER app
+ENTRYPOINT ["./MinimalApiAot"]

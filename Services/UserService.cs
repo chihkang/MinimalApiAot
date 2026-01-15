@@ -1,18 +1,22 @@
+using System.Text.RegularExpressions;
+using MongoDB.Bson;
+using MongoDB.Driver;
+
 namespace MinimalApiAot.Services;
 
-public class UserService(ApplicationDbContext context, ILogger<UserService> logger, IPortfolioService portfolioService)
+public class UserService(MongoDbContext db, ILogger<UserService> logger, IPortfolioService portfolioService)
     : IUserService
 {
+    private readonly IMongoCollection<User> _users = db.Users;
+    private readonly IMongoCollection<Portfolio> _portfolios = db.Portfolios;
     public async Task<List<User>> GetAllUsersAsync()
     {
-        return await context.Users
-            .AsNoTracking() // 提高讀取效能
-            .ToListAsync();
+        return await _users.Find(FilterDefinition<User>.Empty).ToListAsync();
     }
 
     public async Task<User?> GetUserByIdAsync(ObjectId objectId)
     {
-        return await context.Users.FindAsync(objectId);
+        return await _users.Find(u => u.Id == objectId).FirstOrDefaultAsync();
     }
 
     public async Task<User?> GetUserByEmailAsync(string email)
@@ -20,9 +24,11 @@ public class UserService(ApplicationDbContext context, ILogger<UserService> logg
         if (string.IsNullOrEmpty(email))
             return null;
 
-        return await context.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+        var escaped = Regex.Escape(email);
+        var regex = new BsonRegularExpression($"^{escaped}$", "i");
+        var filter = Builders<User>.Filter.Regex(u => u.Email, regex);
+
+        return await _users.Find(filter).FirstOrDefaultAsync();
     }
 
     public async Task<User> CreateUserAsync(User user)
@@ -31,18 +37,21 @@ public class UserService(ApplicationDbContext context, ILogger<UserService> logg
         {
             // 設置創建時間
             user.CreatedAt = DateTime.UtcNow;
+            if (user.Id == ObjectId.Empty)
+            {
+                user.Id = ObjectId.GenerateNewId();
+            }
 
             // 創建用戶
-            await context.Users.AddAsync(user);
-            await context.SaveChangesAsync();
+            await _users.InsertOneAsync(user);
 
             // 自動創建 Portfolio
             var portfolio = await portfolioService.CreateAsync(user.Id);
 
             // 更新用戶的 PortfolioId
             user.PortfolioId = portfolio.Id;
-            context.Users.Update(user);
-            await context.SaveChangesAsync();
+            var update = Builders<User>.Update.Set(u => u.PortfolioId, portfolio.Id);
+            await _users.UpdateOneAsync(u => u.Id == user.Id, update);
 
             return user;
         }
@@ -55,12 +64,8 @@ public class UserService(ApplicationDbContext context, ILogger<UserService> logg
             {
                 if (user.Id != default)
                 {
-                    var existingUser = await context.Users.FindAsync(user.Id);
-                    if (existingUser != null)
-                    {
-                        context.Users.Remove(existingUser);
-                        await context.SaveChangesAsync();
-                    }
+                    await _users.DeleteOneAsync(u => u.Id == user.Id);
+                    await _portfolios.DeleteOneAsync(p => p.UserId == user.Id);
                 }
             }
             catch (Exception cleanupEx)
@@ -75,37 +80,30 @@ public class UserService(ApplicationDbContext context, ILogger<UserService> logg
 
     public async Task<bool> UpdateUserAsync(ObjectId objectId, User user)
     {
-        var existingUser = await context.Users.FindAsync(objectId);
+        var existingUser = await _users.Find(u => u.Id == objectId).FirstOrDefaultAsync();
         if (existingUser == null)
             return false;
 
-        var originalCreatedAt = existingUser.CreatedAt;
-        context.Entry(existingUser).CurrentValues.SetValues(user);
-        existingUser.CreatedAt = originalCreatedAt;
+        user.Id = objectId;
+        user.CreatedAt = existingUser.CreatedAt;
 
-        await context.SaveChangesAsync();
-        return true;
+        var result = await _users.ReplaceOneAsync(u => u.Id == objectId, user);
+        return result.ModifiedCount > 0;
     }
 
     public async Task<bool> DeleteUserAsync(ObjectId objectId)
     {
         try
         {
-            var user = await context.Users.FindAsync(objectId);
+            var user = await _users.Find(u => u.Id == objectId).FirstOrDefaultAsync();
             if (user == null)
                 return false;
 
             // 先刪除關聯的投資組合
-            var portfolio = await context.Portfolios.FirstOrDefaultAsync(p => p.UserId == objectId);
-            if (portfolio != null)
-            {
-                context.Portfolios.Remove(portfolio);
-                await context.SaveChangesAsync();
-            }
+            await _portfolios.DeleteOneAsync(p => p.UserId == objectId);
 
             // 再刪除使用者
-            context.Users.Remove(user);
-            await context.SaveChangesAsync();
+            await _users.DeleteOneAsync(u => u.Id == objectId);
 
             return true;
         }

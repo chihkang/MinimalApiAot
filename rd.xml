@@ -1,6 +1,9 @@
 <Directives>
     <Application>
         <!-- MongoDB Driver -->
+        <Assembly Name="MongoDB.Bson" Dynamic="Required All" />
+        <Assembly Name="MongoDB.Driver" Dynamic="Required All" />
+        <Assembly Name="MongoDB.Driver.Core" Dynamic="Required All" />
         <Assembly Name="MongoDB.Driver">
             <Type Name="MongoDB.Driver.MongoClient" Dynamic="Required All" />
             <Type Name="MongoDB.Driver.MongoCollection`1[[System.Object]]" Dynamic="Required All" />
@@ -14,6 +17,27 @@
         <Assembly Name="MongoDB.Bson">
             <Type Name="MongoDB.Bson.BsonDocument" Dynamic="Required All" />
             <Type Name="MongoDB.Bson.BsonValue" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.Serialization.Serializers.ObjectIdSerializer" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.Serialization.Serializers.DateTimeSerializer" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.Serialization.Serializers.DecimalSerializer" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.Serialization.Serializers.NullableSerializer`1" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.Serialization.Serializers.EnumSerializer`1" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.Serialization.Serializers.Int64Serializer" Dynamic="Required All" />
+            <Type Name="MongoDB.Bson.Serialization.Serializers.EnumerableInterfaceImplementerSerializer`2" Dynamic="Required All" />
         </Assembly>
     </Application>
+        <Assembly Name="MinimalApiAot">
+            <Type Name="MinimalApiAot.Models.Entities.User" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.UserSettings" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.Stock" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.Portfolio" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.PortfolioStock" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.PortfolioDailyValue" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.PositionEvent" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.PositionEventType" Dynamic="Required All" />
+            <Type Name="MinimalApiAot.Models.Entities.Currency" Dynamic="Required All" />
+        </Assembly>
+        <Assembly Name="System.Private.CoreLib">
+            <Type Name="System.Collections.Generic.List`1[[MinimalApiAot.Models.Entities.PortfolioStock, MinimalApiAot]]" Dynamic="Required All" />
+        </Assembly>
 </Directives>

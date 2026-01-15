@@ -1,13 +1,19 @@
+using MongoDB.Driver;
+
 namespace MinimalApiAot.Services;
 
 /// <summary>
 /// Service for managing position events with Portfolio synchronization and optimistic concurrency
 /// </summary>
 public class PositionEventService(
-    ApplicationDbContext context,
+    MongoDbContext db,
     ILogger<PositionEventService> logger)
     : IPositionEventService
 {
+    private readonly IMongoCollection<PositionEvent> _positionEvents = db.PositionEvents;
+    private readonly IMongoCollection<User> _users = db.Users;
+    private readonly IMongoCollection<Stock> _stocks = db.Stocks;
+    private readonly IMongoCollection<Portfolio> _portfolios = db.Portfolios;
     private const int MaxRetryAttempts = 3;
     private const decimal ValidationTolerance = 0.01m; // Allow small floating point differences
 
@@ -17,35 +23,30 @@ public class PositionEventService(
         PaginationRequest pagination,
         CancellationToken cancellationToken = default)
     {
-        var query = context.PositionEvents.AsNoTracking();
+        var filter = FilterDefinition<PositionEvent>.Empty;
+        var totalCount = await _positionEvents.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
-            .OrderByDescending(e => e.TradeAt)
-            .Skip(pagination.Skip)
-            .Take(pagination.PageSize)
+        var items = await _positionEvents.Find(filter)
+            .SortByDescending(e => e.TradeAt)
+            .Skip((int)pagination.Skip)
+            .Limit((int)pagination.PageSize)
             .ToListAsync(cancellationToken);
 
         return PaginatedResponse<PositionEventResponseDto>.Create(
             items.Select(PositionEventResponseDto.FromEntity),
-            totalCount,
+            (int)totalCount,
             pagination.Page,
             pagination.PageSize);
     }
 
     public async Task<PositionEvent?> GetByIdAsync(ObjectId id, CancellationToken cancellationToken = default)
     {
-        return await context.PositionEvents
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        return await _positionEvents.Find(e => e.Id == id).FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<PositionEvent?> GetByOperationIdAsync(string operationId, CancellationToken cancellationToken = default)
     {
-        return await context.PositionEvents
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.OperationId == operationId, cancellationToken);
+        return await _positionEvents.Find(e => e.OperationId == operationId).FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<PaginatedResponse<PositionEventResponseDto>> GetByUserIdAsync(
@@ -57,28 +58,29 @@ public class PositionEventService(
         var endDate = query.GetEffectiveEndDate();
         var pagination = query.ToPaginationRequest();
 
-        var baseQuery = context.PositionEvents
-            .AsNoTracking()
-            .Where(e => e.UserId == userId)
-            .Where(e => e.TradeAt >= startDate && e.TradeAt <= endDate);
+        var filter = Builders<PositionEvent>.Filter.And(
+            Builders<PositionEvent>.Filter.Eq(e => e.UserId, userId),
+            Builders<PositionEvent>.Filter.Gte(e => e.TradeAt, startDate),
+            Builders<PositionEvent>.Filter.Lte(e => e.TradeAt, endDate));
 
-        // Apply type filter if specified
         if (query.Type.HasValue)
         {
-            baseQuery = baseQuery.Where(e => e.Type == query.Type.Value);
+            filter = Builders<PositionEvent>.Filter.And(
+                filter,
+                Builders<PositionEvent>.Filter.Eq(e => e.Type, query.Type.Value));
         }
 
-        var totalCount = await baseQuery.CountAsync(cancellationToken);
+        var totalCount = await _positionEvents.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
-        var items = await baseQuery
-            .OrderByDescending(e => e.TradeAt)
-            .Skip(pagination.Skip)
-            .Take(pagination.PageSize)
+        var items = await _positionEvents.Find(filter)
+            .SortByDescending(e => e.TradeAt)
+            .Skip((int)pagination.Skip)
+            .Limit((int)pagination.PageSize)
             .ToListAsync(cancellationToken);
 
         return PaginatedResponse<PositionEventResponseDto>.Create(
             items.Select(PositionEventResponseDto.FromEntity),
-            totalCount,
+            (int)totalCount,
             pagination.Page,
             pagination.PageSize);
     }
@@ -92,28 +94,29 @@ public class PositionEventService(
         var endDate = query.GetEffectiveEndDate();
         var pagination = query.ToPaginationRequest();
 
-        var baseQuery = context.PositionEvents
-            .AsNoTracking()
-            .Where(e => e.StockId == stockId)
-            .Where(e => e.TradeAt >= startDate && e.TradeAt <= endDate);
+        var filter = Builders<PositionEvent>.Filter.And(
+            Builders<PositionEvent>.Filter.Eq(e => e.StockId, stockId),
+            Builders<PositionEvent>.Filter.Gte(e => e.TradeAt, startDate),
+            Builders<PositionEvent>.Filter.Lte(e => e.TradeAt, endDate));
 
-        // Apply type filter if specified
         if (query.Type.HasValue)
         {
-            baseQuery = baseQuery.Where(e => e.Type == query.Type.Value);
+            filter = Builders<PositionEvent>.Filter.And(
+                filter,
+                Builders<PositionEvent>.Filter.Eq(e => e.Type, query.Type.Value));
         }
 
-        var totalCount = await baseQuery.CountAsync(cancellationToken);
+        var totalCount = await _positionEvents.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
-        var items = await baseQuery
-            .OrderByDescending(e => e.TradeAt)
-            .Skip(pagination.Skip)
-            .Take(pagination.PageSize)
+        var items = await _positionEvents.Find(filter)
+            .SortByDescending(e => e.TradeAt)
+            .Skip((int)pagination.Skip)
+            .Limit((int)pagination.PageSize)
             .ToListAsync(cancellationToken);
 
         return PaginatedResponse<PositionEventResponseDto>.Create(
             items.Select(PositionEventResponseDto.FromEntity),
-            totalCount,
+            (int)totalCount,
             pagination.Page,
             pagination.PageSize);
     }
@@ -145,14 +148,14 @@ public class PositionEventService(
         }
 
         // Check if user exists
-        var userExists = await context.Users.AnyAsync(u => u.Id == userId, cancellationToken);
+        var userExists = await _users.Find(u => u.Id == userId).AnyAsync(cancellationToken);
         if (!userExists)
         {
             return PositionEventCreateResult.Error($"User with ID {request.UserId} not found", PositionEventErrorType.UserNotFound);
         }
 
         // Check if stock exists
-        var stockExists = await context.Stocks.AnyAsync(s => s.Id == stockId, cancellationToken);
+        var stockExists = await _stocks.Find(s => s.Id == stockId).AnyAsync(cancellationToken);
         if (!stockExists)
         {
             return PositionEventCreateResult.Error($"Stock with ID {request.StockId} not found", PositionEventErrorType.StockNotFound);
@@ -161,6 +164,7 @@ public class PositionEventService(
         // Create the position event entity
         var positionEvent = new PositionEvent
         {
+            Id = ObjectId.GenerateNewId(),
             OperationId = request.OperationId,
             UserId = userId,
             StockId = stockId,
@@ -183,10 +187,21 @@ public class PositionEventService(
         {
             try
             {
+                var operationExists = await _positionEvents
+                    .Find(e => e.OperationId == request.OperationId)
+                    .AnyAsync(cancellationToken);
+
+                if (operationExists)
+                {
+                    return PositionEventCreateResult.Error(
+                        $"OperationId '{request.OperationId}' already exists",
+                        PositionEventErrorType.DuplicateOperationId);
+                }
+
                 // Get the portfolio for this user
-                var portfolio = await context.Portfolios
-                    .Include(p => p.Stocks)
-                    .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+                var portfolio = await _portfolios
+                    .Find(p => p.UserId == userId)
+                    .FirstOrDefaultAsync(cancellationToken);
 
                 if (portfolio == null)
                 {
@@ -196,13 +211,29 @@ public class PositionEventService(
                 // Update portfolio stock quantity
                 UpdatePortfolioStock(portfolio, stockId, request.QuantityAfter);
                 portfolio.LastUpdated = DateTime.UtcNow;
-                portfolio.Version = (portfolio.Version ?? 0) + 1;
+                var currentVersion = portfolio.Version ?? 0;
+                portfolio.Version = currentVersion + 1;
 
-                // Add the position event
-                await context.PositionEvents.AddAsync(positionEvent, cancellationToken);
+                var updated = await TryUpdatePortfolioAsync(portfolio, currentVersion, cancellationToken);
+                if (!updated)
+                {
+                    if (attempt < MaxRetryAttempts - 1)
+                    {
+                        var delay = (int)Math.Pow(2, attempt) * 50;
+                        logger.LogWarning(
+                            "Concurrency conflict on attempt {Attempt}, retrying in {Delay}ms...",
+                            attempt + 1, delay);
+                        await Task.Delay(delay, cancellationToken);
+                        continue;
+                    }
 
-                // Save both changes
-                await context.SaveChangesAsync(cancellationToken);
+                    logger.LogError("Concurrency conflict persisted after {MaxRetries} attempts", MaxRetryAttempts);
+                    return PositionEventCreateResult.Error(
+                        "Portfolio update conflict after maximum retries. Please try again.",
+                        PositionEventErrorType.ConcurrencyConflict);
+                }
+
+                await _positionEvents.InsertOneAsync(positionEvent, cancellationToken: cancellationToken);
 
                 logger.LogInformation(
                     "Created PositionEvent {OperationId} for User {UserId}, Stock {StockId}, Type {Type}, QuantityDelta {QuantityDelta}",
@@ -210,33 +241,12 @@ public class PositionEventService(
 
                 return PositionEventCreateResult.Ok(positionEvent);
             }
-            catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+            catch (MongoWriteException ex) when (IsDuplicateKeyException(ex))
             {
                 logger.LogWarning("Duplicate operationId detected: {OperationId}", request.OperationId);
                 return PositionEventCreateResult.Error(
                     $"OperationId '{request.OperationId}' already exists",
                     PositionEventErrorType.DuplicateOperationId);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (attempt < MaxRetryAttempts - 1)
-                {
-                    var delay = (int)Math.Pow(2, attempt) * 50; // 50ms, 100ms, 200ms
-                    logger.LogWarning(
-                        "Concurrency conflict on attempt {Attempt}, retrying in {Delay}ms...",
-                        attempt + 1, delay);
-                    await Task.Delay(delay, cancellationToken);
-
-                    // Clear the change tracker to get fresh data
-                    context.ChangeTracker.Clear();
-                }
-                else
-                {
-                    logger.LogError("Concurrency conflict persisted after {MaxRetries} attempts", MaxRetryAttempts);
-                    return PositionEventCreateResult.Error(
-                        "Portfolio update conflict after maximum retries. Please try again.",
-                        PositionEventErrorType.ConcurrencyConflict);
-                }
             }
             catch (Exception ex)
             {
@@ -265,8 +275,9 @@ public class PositionEventService(
         {
             try
             {
-                var positionEvent = await context.PositionEvents
-                    .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+                var positionEvent = await _positionEvents
+                    .Find(e => e.Id == id)
+                    .FirstOrDefaultAsync(cancellationToken);
 
                 if (positionEvent == null)
                 {
@@ -295,38 +306,42 @@ public class PositionEventService(
                 // If quantityAfter changed, sync portfolio
                 if (request.QuantityAfter.HasValue && request.QuantityAfter.Value != oldQuantityAfter)
                 {
-                    var portfolio = await context.Portfolios
-                        .Include(p => p.Stocks)
-                        .FirstOrDefaultAsync(p => p.UserId == positionEvent.UserId, cancellationToken);
+                    var portfolio = await _portfolios
+                        .Find(p => p.UserId == positionEvent.UserId)
+                        .FirstOrDefaultAsync(cancellationToken);
 
                     if (portfolio != null)
                     {
                         UpdatePortfolioStock(portfolio, positionEvent.StockId, request.QuantityAfter.Value);
                         portfolio.LastUpdated = DateTime.UtcNow;
-                        portfolio.Version = (portfolio.Version ?? 0) + 1;
+                        var currentVersion = portfolio.Version ?? 0;
+                        portfolio.Version = currentVersion + 1;
+
+                        var updated = await TryUpdatePortfolioAsync(portfolio, currentVersion, cancellationToken);
+                        if (!updated)
+                        {
+                            if (attempt < MaxRetryAttempts - 1)
+                            {
+                                var delay = (int)Math.Pow(2, attempt) * 50;
+                                logger.LogWarning("Concurrency conflict on update attempt {Attempt}, retrying...", attempt + 1);
+                                await Task.Delay(delay, cancellationToken);
+                                continue;
+                            }
+
+                            return PositionEventUpdateResult.Error(
+                                "Portfolio update conflict after maximum retries",
+                                PositionEventErrorType.ConcurrencyConflict);
+                        }
                     }
                 }
 
-                await context.SaveChangesAsync(cancellationToken);
+                await _positionEvents.ReplaceOneAsync(
+                    e => e.Id == id,
+                    positionEvent,
+                    cancellationToken: cancellationToken);
 
                 logger.LogInformation("Updated PositionEvent {Id}", id);
                 return PositionEventUpdateResult.Ok(positionEvent);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (attempt < MaxRetryAttempts - 1)
-                {
-                    var delay = (int)Math.Pow(2, attempt) * 50;
-                    logger.LogWarning("Concurrency conflict on update attempt {Attempt}, retrying...", attempt + 1);
-                    await Task.Delay(delay, cancellationToken);
-                    context.ChangeTracker.Clear();
-                }
-                else
-                {
-                    return PositionEventUpdateResult.Error(
-                        "Portfolio update conflict after maximum retries",
-                        PositionEventErrorType.ConcurrencyConflict);
-                }
             }
             catch (Exception ex)
             {
@@ -352,8 +367,9 @@ public class PositionEventService(
         {
             try
             {
-                var positionEvent = await context.PositionEvents
-                    .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+                var positionEvent = await _positionEvents
+                    .Find(e => e.Id == id)
+                    .FirstOrDefaultAsync(cancellationToken);
 
                 if (positionEvent == null)
                 {
@@ -363,9 +379,9 @@ public class PositionEventService(
                 }
 
                 // Rollback portfolio quantity
-                var portfolio = await context.Portfolios
-                    .Include(p => p.Stocks)
-                    .FirstOrDefaultAsync(p => p.UserId == positionEvent.UserId, cancellationToken);
+                var portfolio = await _portfolios
+                    .Find(p => p.UserId == positionEvent.UserId)
+                    .FirstOrDefaultAsync(cancellationToken);
 
                 if (portfolio != null)
                 {
@@ -373,33 +389,33 @@ public class PositionEventService(
                     var rolledBackQuantity = positionEvent.QuantityBefore ?? 0m;
                     UpdatePortfolioStock(portfolio, positionEvent.StockId, rolledBackQuantity);
                     portfolio.LastUpdated = DateTime.UtcNow;
-                    portfolio.Version = (portfolio.Version ?? 0) + 1;
+                    var currentVersion = portfolio.Version ?? 0;
+                    portfolio.Version = currentVersion + 1;
+
+                    var updated = await TryUpdatePortfolioAsync(portfolio, currentVersion, cancellationToken);
+                    if (!updated)
+                    {
+                        if (attempt < MaxRetryAttempts - 1)
+                        {
+                            var delay = (int)Math.Pow(2, attempt) * 50;
+                            logger.LogWarning("Concurrency conflict on delete attempt {Attempt}, retrying...", attempt + 1);
+                            await Task.Delay(delay, cancellationToken);
+                            continue;
+                        }
+
+                        return PositionEventDeleteResult.Error(
+                            "Portfolio update conflict after maximum retries",
+                            PositionEventErrorType.ConcurrencyConflict);
+                    }
                 }
 
-                context.PositionEvents.Remove(positionEvent);
-                await context.SaveChangesAsync(cancellationToken);
+                await _positionEvents.DeleteOneAsync(e => e.Id == id, cancellationToken);
 
                 logger.LogInformation(
                     "Deleted PositionEvent {Id} and rolled back Portfolio quantity to {Quantity}",
                     id, positionEvent.QuantityBefore);
 
                 return PositionEventDeleteResult.Ok();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (attempt < MaxRetryAttempts - 1)
-                {
-                    var delay = (int)Math.Pow(2, attempt) * 50;
-                    logger.LogWarning("Concurrency conflict on delete attempt {Attempt}, retrying...", attempt + 1);
-                    await Task.Delay(delay, cancellationToken);
-                    context.ChangeTracker.Clear();
-                }
-                else
-                {
-                    return PositionEventDeleteResult.Error(
-                        "Portfolio update conflict after maximum retries",
-                        PositionEventErrorType.ConcurrencyConflict);
-                }
             }
             catch (Exception ex)
             {
@@ -448,6 +464,30 @@ public class PositionEventService(
             // Update existing stock quantity
             stockEntry.Quantity = quantity;
         }
+    }
+
+    private async Task<bool> TryUpdatePortfolioAsync(
+        Portfolio portfolio,
+        long currentVersion,
+        CancellationToken cancellationToken)
+    {
+        var versionFilter = currentVersion == 0
+            ? Builders<Portfolio>.Filter.Or(
+                Builders<Portfolio>.Filter.Eq(p => p.Version, 0),
+                Builders<Portfolio>.Filter.Eq(p => p.Version, (long?)null))
+            : Builders<Portfolio>.Filter.Eq(p => p.Version, currentVersion);
+
+        var filter = Builders<Portfolio>.Filter.And(
+            Builders<Portfolio>.Filter.Eq(p => p.Id, portfolio.Id),
+            versionFilter);
+
+        var update = Builders<Portfolio>.Update
+            .Set(p => p.Stocks, portfolio.Stocks)
+            .Set(p => p.LastUpdated, portfolio.LastUpdated)
+            .Set(p => p.Version, portfolio.Version);
+
+        var result = await _portfolios.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+        return result.ModifiedCount > 0;
     }
 
     /// <summary>
@@ -520,13 +560,9 @@ public class PositionEventService(
     /// <summary>
     /// Check if exception is caused by duplicate key (operationId unique constraint)
     /// </summary>
-    private static bool IsDuplicateKeyException(DbUpdateException ex)
+    private static bool IsDuplicateKeyException(MongoWriteException ex)
     {
-        // MongoDB duplicate key error contains "E11000" or "duplicate key"
-        return ex.InnerException?.Message?.Contains("E11000") == true ||
-               ex.InnerException?.Message?.Contains("duplicate key") == true ||
-               ex.Message.Contains("E11000") ||
-               ex.Message.Contains("duplicate key");
+        return ex.WriteError?.Category == ServerErrorCategory.DuplicateKey;
     }
 
     #endregion

@@ -1,10 +1,12 @@
-using Microsoft.EntityFrameworkCore.Storage;
+using MongoDB.Driver;
 
 namespace MinimalApiAot.Services;
 
-public class PortfolioService(ApplicationDbContext context, ILogger<PortfolioService> logger)
+public class PortfolioService(MongoDbContext db, ILogger<PortfolioService> logger)
     : IPortfolioService
 {
+    private readonly IMongoCollection<Portfolio> _portfolios = db.Portfolios;
+    private readonly IMongoCollection<User> _users = db.Users;
     public void UpdatePortfolioStock(Portfolio portfolio, ObjectId stockId, decimal quantity)
     {
         var stockEntry = portfolio.Stocks.FirstOrDefault(s => s.StockId == stockId);
@@ -24,48 +26,42 @@ public class PortfolioService(ApplicationDbContext context, ILogger<PortfolioSer
 
     public async Task<IEnumerable<Portfolio>> GetAllAsync()
     {
-        return await context.Portfolios
-            .Include(p => p.Stocks)
-            .ToListAsync();
+        return await _portfolios.Find(FilterDefinition<Portfolio>.Empty).ToListAsync();
     }
 
     public async Task<Portfolio?> GetByIdAsync(ObjectId id)
     {
-        return await context.Portfolios
-            .Include(p => p.Stocks)
-            .FirstOrDefaultAsync(p => p.Id == id);
+        return await _portfolios.Find(p => p.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task<Portfolio?> GetByUserIdAsync(ObjectId userId)
     {
-        return await context.Portfolios
-            .Include(p => p.Stocks)
-            .FirstOrDefaultAsync(p => p.UserId == userId);
+        return await _portfolios.Find(p => p.UserId == userId).FirstOrDefaultAsync();
     }
 
     public async Task<Portfolio?> GetByUserNameAsync(string userName)
     {
         // 首先找到符合的 User
-        var user = await context.Users
-            .FirstOrDefaultAsync(u => u.Username == userName);
+        var user = await _users.Find(u => u.Username == userName).FirstOrDefaultAsync();
 
         // 然後查詢對應的 Portfolio
-        return await context.Portfolios
-            .Include(p => p.Stocks)
-            .FirstOrDefaultAsync(p => user != null && p.UserId == user.Id);
+        return user == null
+            ? null
+            : await _portfolios.Find(p => p.UserId == user.Id).FirstOrDefaultAsync();
     }
 
     public async Task<Portfolio> CreateAsync(ObjectId userId)
     {
         var portfolio = new Portfolio
         {
+            Id = ObjectId.GenerateNewId(),
             UserId = userId,
             LastUpdated = DateTime.UtcNow,
-            Stocks = []
+            Stocks = [],
+            Version = 1
         };
 
-        await context.Portfolios.AddAsync(portfolio);
-        await context.SaveChangesAsync();
+        await _portfolios.InsertOneAsync(portfolio);
         return portfolio;
     }
 
@@ -73,15 +69,13 @@ public class PortfolioService(ApplicationDbContext context, ILogger<PortfolioSer
     {
         try
         {
-            var existingPortfolio = await context.Portfolios
-                .Include(p => p.Stocks)
-                .FirstOrDefaultAsync(p => p.Id == portfolio.Id);
+            var existingPortfolio = await _portfolios.Find(p => p.Id == portfolio.Id).FirstOrDefaultAsync();
 
             if (existingPortfolio == null)
                 return false;
 
             // 更新基本屬性
-            context.Entry(existingPortfolio).CurrentValues.SetValues(portfolio);
+            existingPortfolio.UserId = portfolio.UserId;
 
             // 更新股票集合：只更新變更的部分
             foreach (var updatedStock in portfolio.Stocks)
@@ -102,9 +96,11 @@ public class PortfolioService(ApplicationDbContext context, ILogger<PortfolioSer
             }
 
             existingPortfolio.LastUpdated = DateTime.UtcNow;
-            await context.SaveChangesAsync();
+            var updateResult = await _portfolios.ReplaceOneAsync(
+                p => p.Id == existingPortfolio.Id,
+                existingPortfolio);
 
-            return true;
+            return updateResult.ModifiedCount > 0;
         }
         catch (Exception ex)
         {

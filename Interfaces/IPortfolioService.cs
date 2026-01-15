@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore.Storage;
-
 namespace MinimalApiAot.Interfaces;
 
 public interface IPortfolioService
