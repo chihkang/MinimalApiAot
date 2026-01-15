@@ -235,18 +235,67 @@ app.Run();
 
 static void EnsureMongoIndexes(MongoDbContext db)
 {
-    var positionEventIndexes = new List<CreateIndexModel<PositionEvent>>
-    {
-        new(
-            Builders<PositionEvent>.IndexKeys.Ascending(e => e.OperationId),
-            new CreateIndexOptions { Unique = true, Name = "ux_operationId" }),
-        new(
-            Builders<PositionEvent>.IndexKeys.Ascending(e => e.UserId).Descending(e => e.TradeAt),
-            new CreateIndexOptions { Name = "ix_user_tradeAt" }),
-        new(
-            Builders<PositionEvent>.IndexKeys.Ascending(e => e.StockId).Descending(e => e.TradeAt),
-            new CreateIndexOptions { Name = "ix_stock_tradeAt" })
-    };
+    var existing = db.PositionEvents.Indexes.List().ToList();
 
-    db.PositionEvents.Indexes.CreateMany(positionEventIndexes);
+    static bool HasIndex(IEnumerable<BsonDocument> list, BsonDocument key, bool unique)
+    {
+        foreach (var doc in list)
+        {
+            if (!doc.TryGetValue("key", out var keyValue))
+                continue;
+
+            if (!keyValue.IsBsonDocument)
+                continue;
+
+            var existingKey = keyValue.AsBsonDocument;
+            if (!existingKey.Equals(key))
+                continue;
+
+            if (!unique)
+                return true;
+
+            if (doc.TryGetValue("unique", out var uniqueValue) && uniqueValue.IsBoolean && uniqueValue.AsBoolean)
+                return true;
+        }
+
+        return false;
+    }
+
+    var positionEventIndexes = new List<CreateIndexModel<PositionEvent>>();
+
+    var opKey = new BsonDocument("operationId", 1);
+    if (!HasIndex(existing, opKey, unique: true))
+    {
+        positionEventIndexes.Add(new CreateIndexModel<PositionEvent>(
+            Builders<PositionEvent>.IndexKeys.Ascending(e => e.OperationId),
+            new CreateIndexOptions { Unique = true, Name = "ux_operationId" }));
+    }
+
+    var userTradeKey = new BsonDocument { { "userId", 1 }, { "tradeAt", -1 } };
+    if (!HasIndex(existing, userTradeKey, unique: false))
+    {
+        positionEventIndexes.Add(new CreateIndexModel<PositionEvent>(
+            Builders<PositionEvent>.IndexKeys.Ascending(e => e.UserId).Descending(e => e.TradeAt),
+            new CreateIndexOptions { Name = "ix_user_tradeAt" }));
+    }
+
+    var stockTradeKey = new BsonDocument { { "stockId", 1 }, { "tradeAt", -1 } };
+    if (!HasIndex(existing, stockTradeKey, unique: false))
+    {
+        positionEventIndexes.Add(new CreateIndexModel<PositionEvent>(
+            Builders<PositionEvent>.IndexKeys.Ascending(e => e.StockId).Descending(e => e.TradeAt),
+            new CreateIndexOptions { Name = "ix_stock_tradeAt" }));
+    }
+
+    if (positionEventIndexes.Count == 0)
+        return;
+
+    try
+    {
+        db.PositionEvents.Indexes.CreateMany(positionEventIndexes);
+    }
+    catch (MongoCommandException ex) when (ex.Code == 85 || ex.Code == 86 || ex.Message.Contains("Index already exists", StringComparison.OrdinalIgnoreCase))
+    {
+        // Existing indexes with different names; ignore to avoid startup failure.
+    }
 }
