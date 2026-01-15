@@ -57,7 +57,9 @@ if (string.IsNullOrWhiteSpace(mongoSettings.ConnectionString))
 if (string.IsNullOrWhiteSpace(mongoSettings.DatabaseName))
     throw new InvalidOperationException("MongoSettings:DatabaseName is required (set env var MongoSettings__DatabaseName).");
 
-if (!builder.Environment.IsDevelopment() && (!mongoSettings.UseSsl || mongoSettings.AllowInsecureSsl))
+// 對於 mongodb+srv:// 協議，TLS 已自動啟用，不需要額外檢查
+var isSrvProtocol = mongoSettings.ConnectionString.StartsWith("mongodb+srv://", StringComparison.OrdinalIgnoreCase);
+if (!builder.Environment.IsDevelopment() && !isSrvProtocol && (!mongoSettings.UseSsl || mongoSettings.AllowInsecureSsl))
     throw new InvalidOperationException("In production, MongoDB TLS must be enabled and insecure TLS must be disabled.");
 
 // 1. 首先註冊 MongoClient 為單例
@@ -65,10 +67,13 @@ builder.Services.AddSingleton<IMongoClient>(_ =>
 {
     try
     {
-        var connectionString = EnsureMongoTlsOptions(
-            mongoSettings.ConnectionString,
-            useTls: mongoSettings.UseSsl,
-            allowInsecureTls: mongoSettings.AllowInsecureSsl);
+        // 對於 mongodb+srv:// 協議，直接使用連接字串，不修改 TLS 選項
+        var connectionString = isSrvProtocol
+            ? mongoSettings.ConnectionString
+            : EnsureMongoTlsOptions(
+                mongoSettings.ConnectionString,
+                useTls: mongoSettings.UseSsl,
+                allowInsecureTls: mongoSettings.AllowInsecureSsl);
 
         return new MongoClient(connectionString);
     }
